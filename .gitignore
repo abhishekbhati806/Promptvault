@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# Builds
+dist/
+build/
+
+# Misc
+.DS_Store
+*.log
+.pytest_cache/
