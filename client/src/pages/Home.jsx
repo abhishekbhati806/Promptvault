@@ -1,3 +1,39 @@
+import PromptCard from '../components/PromptCard.jsx';
+
+// Temporary samples — replaced by the real dataset on Day 10.
+const SAMPLES = [
+  {
+    id: 'sample-1',
+    title: 'Senior Code Reviewer',
+    category: 'coding',
+    likes: 214,
+    author: 'Aarav S.',
+    description: 'Get a rigorous, production-grade review of any code snippet.',
+    prompt:
+      'You are a senior software engineer. Review the code below:\n1. Summarize what it does.\n2. List bugs and security risks by severity.\n3. Rewrite it with the fixes applied.',
+  },
+  {
+    id: 'sample-2',
+    title: 'Blog Post Writer',
+    category: 'writing',
+    likes: 342,
+    author: 'Meera K.',
+    description: 'A structured 900-word blog post with hook, subheads and CTA.',
+    prompt:
+      'Act as an expert content writer. Write a 900-word blog post about {topic}.\n- Open with a surprising fact or question.\n- Use H2 subheadings and short paragraphs.\n- End with a 3-point summary and a call to action.',
+  },
+  {
+    id: 'sample-3',
+    title: 'Socratic Tutor',
+    category: 'education',
+    likes: 289,
+    author: 'Ravi T.',
+    description: 'Learn any topic by being guided with questions, not answers.',
+    prompt:
+      'You are a Socratic tutor. I want to learn: {topic}.\n- Never give the full answer directly.\n- Ask one guiding question at a time.\n- If I am stuck, give a hint, then a smaller hint, then the answer.',
+  },
+];
+
 export default function Home() {
   return (
     <main className="home">
@@ -61,11 +97,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Placeholder until Day 5 */}
+      {/* Prompt library */}
       <section id="prompts" className="section section-alt">
         <div className="container">
           <h2 className="section-title">Explore the vault</h2>
-          <p className="muted">The prompt library arrives tomorrow (Day 5). 🏗️</p>
+          <div className="prompt-grid">
+            {SAMPLES.map((p) => (
+              <PromptCard key={p.id} prompt={p} />
+            ))}
+          </div>
         </div>
       </section>
 
