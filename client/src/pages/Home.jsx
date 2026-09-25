@@ -1,40 +1,25 @@
+import { useMemo, useState } from 'react';
 import PromptCard from '../components/PromptCard.jsx';
-
-// Temporary samples — replaced by the real dataset on Day 10.
-const SAMPLES = [
-  {
-    id: 'sample-1',
-    title: 'Senior Code Reviewer',
-    category: 'coding',
-    likes: 214,
-    author: 'Aarav S.',
-    description: 'Get a rigorous, production-grade review of any code snippet.',
-    prompt:
-      'You are a senior software engineer. Review the code below:\n1. Summarize what it does.\n2. List bugs and security risks by severity.\n3. Rewrite it with the fixes applied.',
-  },
-  {
-    id: 'sample-2',
-    title: 'Blog Post Writer',
-    category: 'writing',
-    likes: 342,
-    author: 'Meera K.',
-    description: 'A structured 900-word blog post with hook, subheads and CTA.',
-    prompt:
-      'Act as an expert content writer. Write a 900-word blog post about {topic}.\n- Open with a surprising fact or question.\n- Use H2 subheadings and short paragraphs.\n- End with a 3-point summary and a call to action.',
-  },
-  {
-    id: 'sample-3',
-    title: 'Socratic Tutor',
-    category: 'education',
-    likes: 289,
-    author: 'Ravi T.',
-    description: 'Learn any topic by being guided with questions, not answers.',
-    prompt:
-      'You are a Socratic tutor. I want to learn: {topic}.\n- Never give the full answer directly.\n- Ask one guiding question at a time.\n- If I am stuck, give a hint, then a smaller hint, then the answer.',
-  },
-];
+import CategoryPills from '../components/CategoryPills.jsx';
+import { CATEGORIES } from '../data/categories.js';
+import { PROMPTS } from '../data/prompts.js';
 
 export default function Home() {
+  const [category, setCategory] = useState('all');
+
+  const filtered = useMemo(
+    () => PROMPTS.filter((p) => category === 'all' || p.category === category),
+    [category]
+  );
+
+  const counts = useMemo(() => {
+    const map = {};
+    PROMPTS.forEach((p) => {
+      map[p.category] = (map[p.category] || 0) + 1;
+    });
+    return map;
+  }, []);
+
   return (
     <main className="home">
       {/* Hero */}
@@ -58,11 +43,11 @@ export default function Home() {
           </div>
           <div className="hero-stats">
             <div>
-              <strong>12+</strong>
+              <strong>{PROMPTS.length}</strong>
               <span>prompts</span>
             </div>
             <div>
-              <strong>8</strong>
+              <strong>{CATEGORIES.length}</strong>
               <span>categories</span>
             </div>
             <div>
@@ -101,18 +86,42 @@ export default function Home() {
       <section id="prompts" className="section section-alt">
         <div className="container">
           <h2 className="section-title">Explore the vault</h2>
+          <CategoryPills categories={CATEGORIES} active={category} onSelect={setCategory} />
           <div className="prompt-grid">
-            {SAMPLES.map((p) => (
+            {filtered.map((p) => (
               <PromptCard key={p.id} prompt={p} />
             ))}
           </div>
+          {filtered.length === 0 && (
+            <p className="muted center">No prompts in this category yet.</p>
+          )}
         </div>
       </section>
 
+      {/* Categories */}
       <section id="categories" className="section">
         <div className="container">
-          <h2 className="section-title">Categories</h2>
-          <p className="muted">Coming on Day 6. 🏗️</p>
+          <h2 className="section-title">Browse by category</h2>
+          <div className="cat-grid">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="cat-card"
+                onClick={() => {
+                  setCategory(c.id);
+                  document.getElementById('prompts')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <span className="cat-icon" aria-hidden="true">
+                  {c.icon}
+                </span>
+                <span className="cat-name">{c.name}</span>
+                <span className="muted cat-desc">{c.description}</span>
+                <span className="tag">{counts[c.id] || 0} prompts</span>
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
