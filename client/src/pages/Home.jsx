@@ -1,16 +1,24 @@
 import { useMemo, useState } from 'react';
+import SearchBar from '../components/SearchBar.jsx';
 import PromptCard from '../components/PromptCard.jsx';
 import CategoryPills from '../components/CategoryPills.jsx';
 import { CATEGORIES } from '../data/categories.js';
 import { PROMPTS } from '../data/prompts.js';
 
 export default function Home() {
+  const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
 
-  const filtered = useMemo(
-    () => PROMPTS.filter((p) => category === 'all' || p.category === category),
-    [category]
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return PROMPTS.filter((p) => {
+      const matchesCategory = category === 'all' || p.category === category;
+      const haystack = [p.title, p.description, p.prompt, ...(p.tags || [])]
+        .join(' ')
+        .toLowerCase();
+      return matchesCategory && (!q || haystack.includes(q));
+    });
+  }, [query, category]);
 
   const counts = useMemo(() => {
     const map = {};
@@ -85,7 +93,10 @@ export default function Home() {
       {/* Prompt library */}
       <section id="prompts" className="section section-alt">
         <div className="container">
-          <h2 className="section-title">Explore the vault</h2>
+          <div className="section-head">
+            <h2 className="section-title">Explore the vault</h2>
+            <SearchBar value={query} onChange={setQuery} />
+          </div>
           <CategoryPills categories={CATEGORIES} active={category} onSelect={setCategory} />
           <div className="prompt-grid">
             {filtered.map((p) => (
@@ -93,7 +104,7 @@ export default function Home() {
             ))}
           </div>
           {filtered.length === 0 && (
-            <p className="muted center">No prompts in this category yet.</p>
+            <p className="muted center">No prompts match your search. Try a different word or category.</p>
           )}
         </div>
       </section>
