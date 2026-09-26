@@ -2,6 +2,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
+import PromptDetails from './pages/PromptDetails.jsx';
 
 function NotFound() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/prompts/:id" element={<PromptDetails />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
