@@ -664,3 +664,111 @@ h1 {
   font-weight: 700;
   color: var(--accent);
 }
+
+/* ============================================================
+   Responsive layout (Day 9)
+   ============================================================ */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.nav-toggle span {
+  width: 24px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-toggle.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (max-width: 900px) {
+  .features,
+  .steps,
+  .prompt-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-stats {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-links {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+    display: none;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-link {
+    padding: 0.8rem 1.5rem;
+  }
+
+  .features,
+  .steps,
+  .prompt-grid,
+  .cat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-head {
+    flex-direction: column;
+  }
+
+  .details-title {
+    font-size: 1.7rem;
+  }
+
+  .hero {
+    padding: 3.5rem 0 3rem;
+  }
+
+  .section {
+    padding: 2.8rem 0;
+  }
+
+  .footer-inner {
+    gap: 1.5rem;
+  }
+}
