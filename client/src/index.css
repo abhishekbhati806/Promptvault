@@ -772,3 +772,22 @@ h1 {
     gap: 1.5rem;
   }
 }
+
+/* ============================================================
+   Prompt card tags (Day 10)
+   ============================================================ */
+.prompt-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.mini-tag {
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+}
