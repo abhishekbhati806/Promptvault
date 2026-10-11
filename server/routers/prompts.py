@@ -1,8 +1,11 @@
-"""Prompt retrieval endpoints using in-memory sample data."""
+"""Prompt retrieval and creation endpoints using in-memory sample data."""
 
 from copy import deepcopy
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, status
+
+from models.prompt import new_prompt_id, now_utc
+from models.schemas import PromptCreate
 from seed import PROMPTS
 
 router = APIRouter(prefix="/api/prompts", tags=["prompts"])
@@ -45,6 +48,21 @@ def list_prompts(
         results.sort(key=lambda p: p.get("created_at"), reverse=True)
 
     return results[skip:skip + limit]
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+def create_prompt(payload: PromptCreate):
+    """Validate and add a prompt to the in-memory prompt list."""
+    new_prompt = payload.dict()
+    new_prompt.update({
+        "id": new_prompt_id(),
+        "likes": 0,
+        "featured": False,
+        "created_at": now_utc(),
+    })
+
+    PROMPTS.append(new_prompt)
+    return deepcopy(new_prompt)
 
 
 @router.get("/{prompt_id}")
