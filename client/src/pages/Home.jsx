@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from 'react';
 import SearchBar from '../components/SearchBar.jsx';
 import PromptCard from '../components/PromptCard.jsx';
@@ -8,6 +9,7 @@ import { PROMPTS } from '../data/prompts.js';
 export default function Home() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
+  
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

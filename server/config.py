@@ -4,6 +4,9 @@ Every value can be overridden with an environment variable so the same
 code runs locally, in Docker and on a host.
 """
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # --- MongoDB -----------------------------------------------------------
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
