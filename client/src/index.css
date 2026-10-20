@@ -791,3 +791,145 @@ h1 {
   padding: 0.1rem 0.5rem;
   border-radius: 6px;
 }
+
+/* Days 18-19: Authentication and dashboard */
+.auth-page {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 0;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+  margin: 0.5rem 0;
+}
+
+.auth-description {
+  margin-bottom: 1.5rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.auth-form label {
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.auth-form input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.auth-hint {
+  font-size: 0.85rem;
+}
+
+.auth-error {
+  padding: 0.7rem;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.auth-switch {
+  margin-top: 1.3rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.dashboard-page {
+  padding: 3rem 0;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.3rem;
+}
+
+.dashboard-card {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow-wrap: anywhere;
+}
+
+.dashboard-card h2 {
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.dashboard-card .btn {
+  margin-top: 1rem;
+}
+
+.dashboard-icon {
+  font-size: 1.8rem;
+}
+
+.nav-action {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.nav-register {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 1.3rem;
+  }
+
+  .dashboard-header {
+    align-items: flex-start;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-register {
+    margin: 0.6rem 1.5rem;
+    text-align: center;
+  }
+}

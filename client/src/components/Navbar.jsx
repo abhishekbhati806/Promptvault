@@ -1,5 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -10,19 +11,24 @@ const links = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { user, logout } = useAuth();
+
+  function closeMenu() {
+    setOpen(false);
+  }
 
   return (
     <header className="navbar">
       <div className="container navbar-inner">
-        <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-icon">🗄️</span>
+        <Link to="/" className="brand" onClick={closeMenu}>
+          <span className="brand-icon">▤</span>
           PromptVault
         </Link>
 
         <button
           type="button"
           className={`nav-toggle ${open ? 'open' : ''}`}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((value) => !value)}
           aria-label="Toggle navigation menu"
           aria-expanded={open}
         >
@@ -32,11 +38,47 @@ export default function Navbar() {
         </button>
 
         <nav className={`nav-links ${open ? 'open' : ''}`}>
-          {links.map((l) => (
-            <Link key={l.label} to={l.to} className="nav-link" onClick={() => setOpen(false)}>
-              {l.label}
+          {links.map((link) => (
+            <Link
+              key={link.label}
+              to={link.to}
+              className="nav-link"
+              onClick={closeMenu}
+            >
+              {link.label}
             </Link>
           ))}
+
+          {user ? (
+            <>
+              <Link to="/dashboard" className="nav-link" onClick={closeMenu}>
+                Dashboard
+              </Link>
+              <button
+                type="button"
+                className="nav-link nav-action"
+                onClick={() => {
+                  logout();
+                  closeMenu();
+                }}
+              >
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="nav-link" onClick={closeMenu}>
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="btn btn-primary nav-register"
+                onClick={closeMenu}
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
