@@ -1,13 +1,13 @@
-
-"""Prompt CRUD and likes API using in-memory data."""
+﻿"""Prompt CRUD and likes API with owner-based access control."""
 
 from copy import deepcopy
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from models.prompt import new_prompt_id, now_utc
 from models.schemas import PromptCreate
+from routers.auth import get_current_user
 from seed import PROMPTS
 
 router = APIRouter(prefix="/api/prompts", tags=["prompts"])
@@ -27,6 +27,14 @@ def find_prompt(prompt_id: str):
         if prompt.get("id") == prompt_id:
             return prompt
     raise HTTPException(status_code=404, detail="Prompt not found")
+
+
+def require_prompt_owner(prompt: dict, user: dict):
+    if prompt.get("owner_id") != user["id"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only modify your own prompts",
+        )
 
 
 @router.get("")
@@ -68,14 +76,20 @@ def list_prompts(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_prompt(payload: PromptCreate):
+def create_prompt(
+    payload: PromptCreate,
+    user: dict = Depends(get_current_user),
+):
     new_prompt = payload.dict()
     new_prompt.update({
         "id": new_prompt_id(),
+        "author": user["name"],
+        "owner_id": user["id"],
         "likes": 0,
         "featured": False,
         "created_at": now_utc(),
     })
+
     PROMPTS.append(new_prompt)
     return deepcopy(new_prompt)
 
@@ -86,8 +100,14 @@ def get_prompt(prompt_id: str):
 
 
 @router.put("/{prompt_id}")
-def update_prompt(prompt_id: str, payload: PromptUpdate):
+def update_prompt(
+    prompt_id: str,
+    payload: PromptUpdate,
+    user: dict = Depends(get_current_user),
+):
     existing = find_prompt(prompt_id)
+    require_prompt_owner(existing, user)
+
     updates = payload.dict(exclude_unset=True)
 
     for key, value in updates.items():
@@ -98,8 +118,13 @@ def update_prompt(prompt_id: str, payload: PromptUpdate):
 
 
 @router.delete("/{prompt_id}")
-def delete_prompt(prompt_id: str):
+def delete_prompt(
+    prompt_id: str,
+    user: dict = Depends(get_current_user),
+):
     existing = find_prompt(prompt_id)
+    require_prompt_owner(existing, user)
+
     PROMPTS.remove(existing)
 
     return {
