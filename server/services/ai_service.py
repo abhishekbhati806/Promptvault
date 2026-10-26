@@ -172,3 +172,80 @@ def generate_prompt(topic: str, category: str = "general", style: str = "step-by
     return _mock_generate(topic, category, style)
 
 
+SCORE_SYSTEM = (
+    "You are a strict prompt-quality evaluator. Score the prompt out of 10 and "
+    "explain it. Respond with JSON only, in the form "
+    '{"score": 0-10, "grade": "A|B|C|D", "strengths": ["..."], '
+    '"weaknesses": ["..."], "tips": ["..."]} with 2-4 items per list.'
+)
+
+
+def _mock_score(text: str) -> dict:
+    low = text.lower()
+    score = 3.0
+    strengths = []
+    weaknesses = []
+    tips = []
+
+    def check(ok: bool, plus: float, strength: str, weakness: str, tip: str):
+        nonlocal score
+        if ok:
+            score += plus
+            strengths.append(strength)
+        else:
+            weaknesses.append(weakness)
+            tips.append(tip)
+
+    check(len(text) >= 80, 2.0,
+          "Gives the model enough detail to work with.",
+          "Very short prompts leave too much up to the model.",
+          "Describe context, inputs and expected output in a few more lines.")
+    check("you are" in low or "act as" in low, 1.5,
+          "Defines a clear role for the model.",
+          "No role is defined, so the model picks its own.",
+          "Start with a role, e.g. 'You are a senior ...'.")
+    check(any(w in low for w in ("format", "bullet", "json", "table", "list", "steps", "sections")), 1.5,
+          "Specifies the output format.",
+          "No output format is specified.",
+          "Tell the model how to structure the answer (bullets, table, JSON...).")
+    check("?" in text or "return" in low or "give" in low or "write" in low, 1.0,
+          "The task is stated as a clear action.",
+          "The actual task is easy to miss.",
+          "Use a direct verb: 'write', 'list', 'return', 'explain'.")
+    check("example" in low or "e.g." in low or "for instance" in low, 1.0,
+          "Includes examples that anchor the answer.",
+          "No examples are given.",
+          "Add one small example of the desired answer.")
+    check(any(w in low for w in ("do not", "only", "limit", "at most", "maximum", "under", "avoid")), 1.0,
+          "Has constraints that keep the model on track.",
+          "No constraints or boundaries are set.",
+          "Add limits: length, things to avoid, scope.")
+
+    score = max(0.0, min(10.0, score))
+    grade = "A" if score >= 8 else "B" if score >= 6 else "C" if score >= 4 else "D"
+    return {
+        "score": round(score, 1),
+        "grade": grade,
+        "strengths": strengths or ["Keep it - short prompts can still be great."],
+        "weaknesses": weaknesses or ["No major weaknesses detected."],
+        "tips": tips or ["Try adding an example to lock in the style you want."],
+        "mode": "mock",
+    }
+
+
+def score_prompt(text: str) -> dict:
+    """Score a prompt 0-10 with strengths, weaknesses and tips."""
+    raw = _chat(SCORE_SYSTEM, "Prompt to evaluate:\n" + text, max_tokens=700, temperature=0.3)
+    if raw:
+        data = _parse_json(raw)
+        if data and isinstance(data.get("score"), (int, float)):
+            score = max(0, min(10, float(data["score"])))
+            return {
+                "score": round(score, 1),
+                "grade": str(data.get("grade") or ("A" if score >= 8 else "B" if score >= 6 else "C")),
+                "strengths": [str(x) for x in (data.get("strengths") or [])][:4],
+                "weaknesses": [str(x) for x in (data.get("weaknesses") or [])][:4],
+                "tips": [str(x) for x in (data.get("tips") or [])][:4],
+                "mode": "openai",
+            }
+    return _mock_score(text)

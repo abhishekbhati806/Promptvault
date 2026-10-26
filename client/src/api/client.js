@@ -48,12 +48,14 @@ export const api = {
     client.post('/auth/login', { email, password }).then((r) => r.data),
   getMe: () => client.get('/auth/me').then((r) => r.data),
 
-  // AI — Day 23 and Day 24
+  // AI — Day 23 to Day 26
   aiStatus: () => client.get('/ai/status').then((r) => r.data),
   improvePrompt: (data) =>
     client.post('/ai/improve', data).then((r) => r.data),
   generatePrompt: (data) =>
     client.post('/ai/generate', data).then((r) => r.data),
+  scorePrompt: (data) =>
+    client.post('/ai/score', data).then((r) => r.data),
 };
 
 export default client;

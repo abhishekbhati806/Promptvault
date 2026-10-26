@@ -12,3 +12,7 @@ class GenerateRequest(BaseModel):
     topic: str = Field(min_length=3, max_length=300)
     category: str = "general"
     style: str = Field(default="step-by-step", max_length=40)
+
+
+class ScoreRequest(BaseModel):
+    prompt: str = Field(min_length=10, max_length=4000)

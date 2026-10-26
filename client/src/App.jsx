@@ -12,6 +12,7 @@ import MyPrompts from './pages/MyPrompts.jsx';
 import EditPrompt from './pages/EditPrompt.jsx';
 import AIImprove from './pages/AIImprove.jsx';
 import AIGenerate from './pages/AIGenerate.jsx';
+import AIScore from './pages/AIScore.jsx';
 import ProtectedRoute from './context/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -20,7 +21,9 @@ function NotFound() {
     <main className="container page-loading">
       <h1>404</h1>
       <p>That page does not exist.</p>
-      <Link to="/" className="btn">Go home</Link>
+      <Link to="/" className="btn">
+        Go home
+      </Link>
     </main>
   );
 }
@@ -44,9 +47,11 @@ function PromptActions() {
           <Link to="/prompts/new" className="btn btn-primary">
             + Create Prompt
           </Link>
+
           <Link to="/prompts/mine" className="btn">
             My Prompts
           </Link>
+
           <Link to="/dashboard" className="btn">
             Dashboard
           </Link>
@@ -55,6 +60,14 @@ function PromptActions() {
 
       <Link to="/ai/improve" className="btn">
         AI Prompt Improver
+      </Link>
+
+      <Link to="/ai/generate" className="btn">
+        AI Prompt Generator
+      </Link>
+
+      <Link to="/ai/score" className="btn">
+        AI Prompt Scorer
       </Link>
     </nav>
   );
@@ -117,7 +130,16 @@ export default function App() {
           element={<AIImprove />}
         />
 
-        <Route path="/ai/generate" element={<AIGenerate />} />
+        <Route
+          path="/ai/generate"
+          element={<AIGenerate />}
+        />
+
+        <Route
+          path="/ai/score"
+          element={<AIScore />}
+        />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
 

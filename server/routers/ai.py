@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 
 import config
-from schemas.ai import GenerateRequest, ImproveRequest
+from schemas.ai import GenerateRequest, ImproveRequest, ScoreRequest
 from services import ai_service
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -28,3 +28,9 @@ def improve(payload: ImproveRequest):
 def generate(payload: GenerateRequest):
     """Generate a new prompt for a topic."""
     return ai_service.generate_prompt(payload.topic, payload.category, payload.style)
+
+
+@router.post("/score")
+def score(payload: ScoreRequest):
+    """Score a prompt out of 10 with strengths, weaknesses and tips."""
+    return ai_service.score_prompt(payload.prompt)
