@@ -4,9 +4,6 @@ Every value can be overridden with an environment variable so the same
 code runs locally, in Docker and on a host.
 """
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # --- MongoDB -----------------------------------------------------------
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
@@ -25,3 +22,9 @@ CORS_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+# --- AI (OpenAI) ---------------------------------------------------------
+# Leave OPENAI_API_KEY empty to run in mock mode: the AI tools then use a
+# deterministic local heuristic instead of a real LLM.
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
