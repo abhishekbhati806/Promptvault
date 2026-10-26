@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { formatDate } from '../utils/helpers.js';
@@ -8,20 +8,27 @@ export default function MyPrompts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    try {
-      setMine(await api.getMyPrompts());
-      setError('');
-    } catch {
-      setError('Could not load your prompts. Is the API running?');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+
+    async function initialLoad() {
+      try {
+        setMine(await api.getMyPrompts());
+        setError('');
+      } catch {
+        if (active) {
+          setError('Could not load your prompts. Is the API running?');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    initialLoad();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const remove = async (id) => {
     if (!window.confirm('Delete this prompt permanently?')) return;

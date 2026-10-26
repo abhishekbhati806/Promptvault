@@ -15,7 +15,7 @@ import AIGenerate from './pages/AIGenerate.jsx';
 import AIScore from './pages/AIScore.jsx';
 import Admin from './pages/Admin.jsx';
 import ProtectedRoute from './context/ProtectedRoute.jsx';
-import { useAuth } from './context/AuthContext.jsx';
+import { useAuth } from './context/useAuth.js';
 
 function NotFound() {
   return (

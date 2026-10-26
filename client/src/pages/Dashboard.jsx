@@ -1,7 +1,7 @@
-﻿
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/useAuth.js';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -25,8 +25,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!token) {
-      setLoading(false);
-      setError('Your login session is unavailable. Please log in again.');
       return;
     }
 
@@ -119,10 +117,10 @@ export default function Dashboard() {
         />
       </section>
 
-      {error && (
+      {(error || !token) && (
         <section className="dashboard-card" role="alert">
           <h2>Dashboard unavailable</h2>
-          <p>{error}</p>
+          <p>{error || 'Your login session is unavailable. Please log in again.'}</p>
           <button
             className="btn btn-primary"
             onClick={() => window.location.reload()}

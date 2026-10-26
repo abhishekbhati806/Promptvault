@@ -29,8 +29,33 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let active = true;
+
+    async function initialLoad() {
+      try {
+        const [nextStats, nextPrompts] = await Promise.all([
+          api.adminStats(),
+          api.adminPrompts(),
+        ]);
+
+        if (active) {
+          setStats(nextStats);
+          setPrompts(nextPrompts);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.response?.data?.detail || 'Could not load admin data.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    initialLoad();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function toggleFeature(prompt) {
     setBusyId(prompt.id);

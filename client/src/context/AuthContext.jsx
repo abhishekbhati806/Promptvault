@@ -1,7 +1,6 @@
-﻿import { createContext, useContext, useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
+import AuthContext from './auth-context.js';
 import { fetchCurrentUser } from '../utils/auth.js';
-
-const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('promptvault_token'));
@@ -12,14 +11,10 @@ export function AuthProvider({ children }) {
     let active = true;
 
     if (!token) {
-      setUser(null);
-      setLoading(false);
       return () => {
         active = false;
       };
     }
-
-    setLoading(true);
 
     fetchCurrentUser(token)
       .then((currentUser) => {
@@ -52,6 +47,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('promptvault_token');
     setToken(null);
     setUser(null);
+    setLoading(false);
   }
 
   return (
@@ -59,14 +55,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider');
-  }
-
-  return context;
 }
