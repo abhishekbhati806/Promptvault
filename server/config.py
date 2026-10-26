@@ -1,4 +1,4 @@
-﻿"""Central configuration for the PromptVault API.
+"""Central configuration for the PromptVault API.
 
 Every value can be overridden with an environment variable so the same
 code runs locally, in Docker and on a host.
@@ -10,7 +10,15 @@ MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
 MONGO_DB = os.getenv("MONGO_DB", "promptvault")
 
 # --- JWT ---------------------------------------------------------------
-JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me-in-production")
+
+_ENV = os.getenv("ENVIRONMENT", "development").lower()
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    if _ENV == "production":
+        raise RuntimeError("JWT_SECRET must be set in production.")
+    JWT_SECRET = "dev-secret-change-me-in-production"
+
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))  # 24h
 
@@ -28,9 +36,3 @@ CORS_ORIGINS = [
 # deterministic local heuristic instead of a real LLM.
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-
-# Local development only: disabled by default.
-PROMPTVAULT_DEV_ADMIN = os.getenv("PROMPTVAULT_DEV_ADMIN", "0") == "1"
-
-
-# Local development only; disabled by default.
