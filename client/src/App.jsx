@@ -1,4 +1,4 @@
-﻿
+
 import { Routes, Route, Link } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
@@ -11,6 +11,7 @@ import CreatePrompt from './pages/CreatePrompt.jsx';
 import MyPrompts from './pages/MyPrompts.jsx';
 import EditPrompt from './pages/EditPrompt.jsx';
 import AIImprove from './pages/AIImprove.jsx';
+import AIGenerate from './pages/AIGenerate.jsx';
 import ProtectedRoute from './context/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -116,6 +117,7 @@ export default function App() {
           element={<AIImprove />}
         />
 
+        <Route path="/ai/generate" element={<AIGenerate />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
 

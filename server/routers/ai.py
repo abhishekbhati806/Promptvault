@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 
 import config
-from schemas.ai import ImproveRequest
+from schemas.ai import GenerateRequest, ImproveRequest
 from services import ai_service
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
@@ -22,3 +22,9 @@ def ai_status():
 def improve(payload: ImproveRequest):
     """Rewrite a prompt into a clearer, more reliable version."""
     return ai_service.improve_prompt(payload.prompt, payload.category, payload.tone)
+
+
+@router.post("/generate")
+def generate(payload: GenerateRequest):
+    """Generate a new prompt for a topic."""
+    return ai_service.generate_prompt(payload.topic, payload.category, payload.style)

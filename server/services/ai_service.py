@@ -79,20 +79,20 @@ def _mock_improve(prompt_text: str, category: str, tone: str) -> dict:
     improved = text
 
     if "you are" not in improved.lower() and "act as" not in improved.lower():
-        improved = f"You are an expert {category} assistant.\n" + improved
+        improved = "You are an expert " + category + " assistant.\n" + improved
         changes.append("Added an expert role so the model knows what to be.")
-    if not improved.lower().startswith("write") and "format" not in improved.lower() and "return" not in improved.lower() and "list" not in improved.lower():
+    if not any(w in improved.lower() for w in ("format", "return", "list", "sections", "bullet")):
         improved += "\nReturn your answer in clear, structured sections with short bullet points."
         changes.append("Added an explicit output format instruction.")
     if "?" not in improved and not improved.rstrip().endswith("."):
         improved = improved.rstrip() + "."
         changes.append("Tightened the ending so the task feels complete.")
     if len(improved) < 120:
-        improved += f"\nKeep the tone {tone}, use plain language, and avoid jargon unless it helps."
-        changes.append(f"Added tone guidance ({tone}).")
+        improved += "\nKeep the tone " + tone + ", use plain language, and avoid jargon unless it helps."
+        changes.append("Added tone guidance (" + tone + ").")
 
     if not changes:
-        changes.append("Prompt was already well structured — minor polish only.")
+        changes.append("Prompt was already well structured - minor polish only.")
 
     return {
         "improved": improved,
@@ -105,7 +105,7 @@ def improve_prompt(prompt_text: str, category: str = "general", tone: str = "cle
     """Return an improved version of the prompt plus a list of what changed."""
     raw = _chat(
         IMPROVE_SYSTEM,
-        f"Category: {category}\nTone: {tone}\nPrompt to improve:\n{prompt_text}",
+        "Category: " + category + "\nTone: " + tone + "\nPrompt to improve:\n" + prompt_text,
         max_tokens=900,
         temperature=0.6,
     )
@@ -118,3 +118,57 @@ def improve_prompt(prompt_text: str, category: str = "general", tone: str = "cle
                 "mode": "openai",
             }
     return _mock_improve(prompt_text, category, tone)
+
+
+GENERATE_SYSTEM = (
+    "You are an expert prompt engineer. Create one high-quality, ready-to-use prompt "
+    "for the requested topic. Respond with JSON only, in the form "
+    '{"title": "...", "description": "...", "prompt": "...", "tags": ["..."]}'
+)
+
+
+def _mock_generate(topic: str, category: str, style: str) -> dict:
+    title = topic + " Prompt"
+    description = (
+        "A " + style + " prompt that turns the model into a focused " + category +
+        " assistant for working on " + topic + "."
+    )
+    lines = [
+        "You are an expert " + category + " consultant. I need help with: " + topic + ".",
+        "Work in a " + style + " style. Follow these rules:",
+        "1. Restate my goal in one sentence to confirm you understood it.",
+        "2. Give a step-by-step plan with 4-6 concrete steps.",
+        "3. Include one short example for each step.",
+        "4. End with 3 follow-up questions I should think about.",
+    ]
+    prompt = "\n".join(lines)
+    return {
+        "title": title,
+        "description": description,
+        "prompt": prompt,
+        "tags": [category, topic.lower().split()[-1], "generated"],
+        "mode": "mock",
+    }
+
+
+def generate_prompt(topic: str, category: str = "general", style: str = "step-by-step") -> dict:
+    """Generate a brand-new prompt for a topic."""
+    raw = _chat(
+        GENERATE_SYSTEM,
+        "Topic: " + topic + "\nCategory: " + category + "\nStyle: " + style,
+        max_tokens=700,
+        temperature=0.8,
+    )
+    if raw:
+        data = _parse_json(raw)
+        if data and data.get("prompt"):
+            return {
+                "title": str(data.get("title") or "Generated prompt").strip()[:120],
+                "description": str(data.get("description") or "").strip()[:500],
+                "prompt": str(data["prompt"]).strip(),
+                "tags": [str(t) for t in (data.get("tags") or [])][:10],
+                "mode": "openai",
+            }
+    return _mock_generate(topic, category, style)
+
+

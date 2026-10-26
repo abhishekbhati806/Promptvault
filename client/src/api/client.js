@@ -52,6 +52,8 @@ export const api = {
   aiStatus: () => client.get('/ai/status').then((r) => r.data),
   improvePrompt: (data) =>
     client.post('/ai/improve', data).then((r) => r.data),
+  generatePrompt: (data) =>
+    client.post('/ai/generate', data).then((r) => r.data),
 };
 
 export default client;
