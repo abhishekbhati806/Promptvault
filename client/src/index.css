@@ -1109,3 +1109,146 @@ h1 {
     width: 100%;
   }
 }
+
+/* Day 24 — Prompt Improver layout */
+.ai-page {
+  max-width: 1100px;
+  margin: 32px auto;
+  padding: 0 24px 48px;
+}
+
+.ai-page > h1 {
+  margin-bottom: 8px;
+}
+
+.ai-page > p {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.ai-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+.ai-panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--border-color, #303957);
+  border-radius: 16px;
+  background: var(--card-bg, #15192b);
+}
+
+.ai-panel h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.ai-panel label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.ai-panel textarea,
+.ai-panel select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 14px;
+  color: inherit;
+  background: var(--input-bg, #0f1322);
+  border: 1px solid var(--border-color, #3a4260);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.ai-panel textarea {
+  min-height: 190px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.ai-panel textarea:focus,
+.ai-panel select:focus {
+  outline: 2px solid #7860ff;
+  outline-offset: 2px;
+}
+
+.ai-panel .form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.ai-panel button {
+  margin-top: 12px;
+}
+
+.ai-result {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid var(--border-color, #303957);
+  border-radius: 12px;
+  background: var(--input-bg, #0f1322);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.7;
+}
+
+.ai-changes {
+  margin: 20px 0;
+}
+
+.ai-changes li {
+  margin-bottom: 8px;
+}
+
+.mode-pill {
+  display: inline-block;
+  padding: 7px 12px;
+  border: 1px solid var(--border-color, #303957);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.mode-mock {
+  color: #f4ce78;
+}
+
+.mode-openai {
+  color: #8ce3b0;
+}
+
+.ai-panel .alert-error {
+  margin: 16px 0;
+  color: #ffaaaa;
+}
+
+@media (max-width: 760px) {
+  .ai-page {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .ai-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-panel {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ai-panel .form-row {
+    grid-template-columns: 1fr;
+  }
+}

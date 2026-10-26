@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import CreatePrompt from './pages/CreatePrompt.jsx';
 import MyPrompts from './pages/MyPrompts.jsx';
 import EditPrompt from './pages/EditPrompt.jsx';
+import AIImprove from './pages/AIImprove.jsx';
 import ProtectedRoute from './context/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -26,24 +27,33 @@ function NotFound() {
 function PromptActions() {
   const { user } = useAuth();
 
-  if (!user) return null;
-
   return (
-    <nav className="container" style={{
-      display: 'flex',
-      gap: '12px',
-      flexWrap: 'wrap',
-      paddingTop: '16px',
-      paddingBottom: '8px'
-    }}>
-      <Link to="/prompts/new" className="btn btn-primary">
-        + Create Prompt
-      </Link>
-      <Link to="/prompts/mine" className="btn">
-        My Prompts
-      </Link>
-      <Link to="/dashboard" className="btn">
-        Dashboard
+    <nav
+      className="container"
+      style={{
+        display: 'flex',
+        gap: '12px',
+        flexWrap: 'wrap',
+        paddingTop: '16px',
+        paddingBottom: '8px',
+      }}
+    >
+      {user && (
+        <>
+          <Link to="/prompts/new" className="btn btn-primary">
+            + Create Prompt
+          </Link>
+          <Link to="/prompts/mine" className="btn">
+            My Prompts
+          </Link>
+          <Link to="/dashboard" className="btn">
+            Dashboard
+          </Link>
+        </>
+      )}
+
+      <Link to="/ai/improve" className="btn">
+        AI Prompt Improver
       </Link>
     </nav>
   );
@@ -99,6 +109,11 @@ export default function App() {
               <Dashboard />
             </ProtectedRoute>
           }
+        />
+
+        <Route
+          path="/ai/improve"
+          element={<AIImprove />}
         />
 
         <Route path="*" element={<NotFound />} />
