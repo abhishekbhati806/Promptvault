@@ -1032,3 +1032,80 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Day 22: Create and edit prompt form */
+
+.prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  max-width: 780px;
+  margin: 24px 0;
+}
+
+.prompt-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.prompt-form label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.prompt-form input,
+.prompt-form textarea,
+.prompt-form select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #353b58;
+  border-radius: 8px;
+  background: #171b30;
+  color: #f5f6ff;
+  font: inherit;
+}
+
+.prompt-form textarea {
+  min-height: 180px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.prompt-form input:focus,
+.prompt-form textarea:focus,
+.prompt-form select:focus {
+  outline: 2px solid #7860ff;
+  outline-offset: 1px;
+}
+
+.prompt-form .form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.prompt-form button {
+  align-self: flex-start;
+  min-width: 180px;
+}
+
+.form-page {
+  padding-top: 20px;
+  padding-bottom: 48px;
+}
+
+@media (max-width: 600px) {
+  .prompt-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .prompt-form button {
+    width: 100%;
+  }
+}

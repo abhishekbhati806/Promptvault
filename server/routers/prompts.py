@@ -1,4 +1,5 @@
-﻿"""Prompt CRUD and likes API with owner-based access control."""
+﻿
+"""Prompt CRUD and likes API with owner-based access control."""
 
 from copy import deepcopy
 
@@ -70,7 +71,10 @@ def list_prompts(
     elif sort == "title":
         results.sort(key=lambda p: p.get("title", "").lower())
     else:
-        results.sort(key=lambda p: p.get("created_at"), reverse=True)
+        results.sort(
+            key=lambda p: p.get("created_at") or "",
+            reverse=True,
+        )
 
     return results[skip:skip + limit]
 
@@ -92,6 +96,23 @@ def create_prompt(
 
     PROMPTS.append(new_prompt)
     return deepcopy(new_prompt)
+
+
+# Keep this route before /{prompt_id} so "mine" isn't treated as an ID.
+@router.get("/mine")
+def get_my_prompts(user: dict = Depends(get_current_user)):
+    """Return only prompts owned by the authenticated user."""
+    results = [
+        deepcopy(prompt)
+        for prompt in PROMPTS
+        if prompt.get("owner_id") == user["id"]
+    ]
+
+    results.sort(
+        key=lambda prompt: prompt.get("created_at") or "",
+        reverse=True,
+    )
+    return results
 
 
 @router.get("/{prompt_id}")

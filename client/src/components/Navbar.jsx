@@ -1,5 +1,5 @@
-﻿import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const links = [
@@ -12,23 +12,26 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  function closeMenu() {
+  const handleLogout = () => {
+    logout();
     setOpen(false);
-  }
+    navigate('/');
+  };
 
   return (
     <header className="navbar">
       <div className="container navbar-inner">
-        <Link to="/" className="brand" onClick={closeMenu}>
-          <span className="brand-icon">▤</span>
+        <Link to="/" className="brand" onClick={() => setOpen(false)}>
+          <span className="brand-icon">🗄️</span>
           PromptVault
         </Link>
 
         <button
           type="button"
           className={`nav-toggle ${open ? 'open' : ''}`}
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => setOpen((v) => !v)}
           aria-label="Toggle navigation menu"
           aria-expanded={open}
         >
@@ -38,46 +41,41 @@ export default function Navbar() {
         </button>
 
         <nav className={`nav-links ${open ? 'open' : ''}`}>
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              to={link.to}
-              className="nav-link"
-              onClick={closeMenu}
-            >
-              {link.label}
+          {links.map((l) => (
+            <Link key={l.label} to={l.to} className="nav-link" onClick={() => setOpen(false)}>
+              {l.label}
             </Link>
           ))}
 
-          {user ? (
+          {user && (
             <>
-              <Link to="/dashboard" className="nav-link" onClick={closeMenu}>
+              <Link to="/dashboard" className="nav-link" onClick={() => setOpen(false)}>
                 Dashboard
               </Link>
-              <button
-                type="button"
-                className="nav-link nav-action"
-                onClick={() => {
-                  logout();
-                  closeMenu();
-                }}
-              >
-                Log out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="nav-link" onClick={closeMenu}>
-                Log in
+              <Link to="/prompts/mine" className="nav-link" onClick={() => setOpen(false)}>
+                My Prompts
               </Link>
-              <Link
-                to="/register"
-                className="btn btn-primary nav-register"
-                onClick={closeMenu}
-              >
+            </>
+          )}
+
+          {user ? (
+            <div className="nav-auth">
+              <span className="nav-user" title={user.email}>
+                👤 {user.name ? user.name.split(' ')[0] : 'Account'}
+              </span>
+              <button type="button" className="btn btn-small" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="nav-auth">
+              <Link to="/login" className="btn btn-small" onClick={() => setOpen(false)}>
+                Login
+              </Link>
+              <Link to="/register" className="btn btn-small btn-primary" onClick={() => setOpen(false)}>
                 Sign up
               </Link>
-            </>
+            </div>
           )}
         </nav>
       </div>
