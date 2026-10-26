@@ -6,12 +6,10 @@ from passlib.context import CryptContext
 
 _password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-JWT_SECRET_KEY = os.getenv(
-    "PROMPTVAULT_JWT_SECRET",
-    "dev-only-change-this-secret-before-deployment",
-)
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_MINUTES = 60
+from config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_MINUTES
+
+JWT_SECRET_KEY = JWT_SECRET
+ACCESS_TOKEN_MINUTES = JWT_EXPIRE_MINUTES
 
 
 def hash_password(password: str) -> str:
