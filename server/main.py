@@ -1,10 +1,11 @@
-﻿"""PromptVault API — FastAPI entry point."""
+﻿
+"""PromptVault API — FastAPI entry point."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CORS_ORIGINS
-from routers import auth, prompts
+from routers import auth, prompts, stats
 
 app = FastAPI(
     title="PromptVault API",
@@ -20,16 +21,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register each router exactly once.
 app.include_router(prompts.router)
 app.include_router(auth.router)
+app.include_router(stats.router)
 
 
 @app.get("/")
 def root():
-    return {"app": "PromptVault API", "version": app.version, "docs": "/docs"}
+    return {
+        "app": "PromptVault API",
+        "version": app.version,
+        "docs": "/docs",
+    }
 
 
 @app.get("/api/health")
 def health():
     return {"status": "ok", "database": "not configured"}
-
