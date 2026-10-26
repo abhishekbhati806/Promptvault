@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import CORS_ORIGINS
-from routers import ai, auth, prompts, stats
+from routers import admin, ai, auth, prompts, stats
 
 app = FastAPI(
     title="PromptVault API",
@@ -26,6 +26,7 @@ app.include_router(prompts.router)
 app.include_router(auth.router)
 app.include_router(stats.router)
 app.include_router(ai.router)
+app.include_router(admin.router)
 
 
 @app.get("/")
@@ -40,3 +41,4 @@ def root():
 @app.get("/api/health")
 def health():
     return {"status": "ok", "database": "not configured"}
+

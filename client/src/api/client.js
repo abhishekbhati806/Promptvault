@@ -1,4 +1,4 @@
-
+﻿
 import axios from 'axios';
 
 // In development, Vite proxies /api to http://localhost:8000.
@@ -34,6 +34,14 @@ export const api = {
   deletePrompt: (id) => client.delete(`/prompts/${id}`).then((r) => r.data),
   likePrompt: (id) => client.post(`/prompts/${id}/like`).then((r) => r.data),
 
+
+  // Admin - Day 27
+  adminStats: () => client.get('/admin/stats').then((r) => r.data),
+  adminPrompts: () => client.get('/admin/prompts').then((r) => r.data),
+  toggleFeature: (id) =>
+    client.post(`/admin/prompts/${id}/feature`).then((r) => r.data),
+    deleteAdminPrompt: (id) =>
+    client.delete(`/admin/prompts/${id}`),
   // Dashboard stats
   getDashboard: () => client.get('/stats/dashboard').then((r) => r.data),
 
@@ -48,7 +56,7 @@ export const api = {
     client.post('/auth/login', { email, password }).then((r) => r.data),
   getMe: () => client.get('/auth/me').then((r) => r.data),
 
-  // AI — Day 23 to Day 26
+  // AI â€” Day 23 to Day 26
   aiStatus: () => client.get('/ai/status').then((r) => r.data),
   improvePrompt: (data) =>
     client.post('/ai/improve', data).then((r) => r.data),
@@ -59,3 +67,5 @@ export const api = {
 };
 
 export default client;
+
+

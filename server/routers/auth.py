@@ -1,8 +1,18 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status
+﻿
+import hmac
+import os
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
-from models.user import create_user, get_user_by_email, public_user, USERS_BY_EMAIL
+from config import PROMPTVAULT_DEV_ADMIN
+from models.user import (
+    create_user,
+    get_user_by_email,
+    public_user,
+    USERS_BY_EMAIL,
+)
 from schemas.user import UserCreate
 from schemas.login import UserLogin
 from services.security import (
@@ -86,3 +96,52 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 @router.get("/me")
 def read_current_user(user: dict = Depends(get_current_user)):
     return {"user": public_user(user)}
+
+
+@router.post("/dev/promote-admin")
+def dev_promote_admin(request: Request, payload: UserLogin):
+    # Disabled unless explicitly enabled for local development.
+    if not PROMPTVAULT_DEV_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
+
+    # Only accept loopback connections.
+    if request.client is None or request.client.host not in (
+        "127.0.0.1",
+        "::1",
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Local access only",
+        )
+
+    expected_key = os.getenv("PROMPTVAULT_DEV_ADMIN_KEY", "")
+    supplied_key = request.headers.get("X-Dev-Admin-Key", "")
+
+    if not expected_key or not hmac.compare_digest(
+        supplied_key, expected_key
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid development key",
+        )
+
+    email = str(payload.email).strip().lower()
+    user = get_user_by_email(email)
+
+    if not user or not verify_password(
+        payload.password, user["password_hash"]
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid account credentials",
+        )
+
+    user["is_admin"] = True
+
+    return {
+        "message": "Admin enabled for this running server process",
+        "user": public_user(user),
+    }

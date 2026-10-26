@@ -13,6 +13,7 @@ import EditPrompt from './pages/EditPrompt.jsx';
 import AIImprove from './pages/AIImprove.jsx';
 import AIGenerate from './pages/AIGenerate.jsx';
 import AIScore from './pages/AIScore.jsx';
+import Admin from './pages/Admin.jsx';
 import ProtectedRoute from './context/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -55,6 +56,12 @@ function PromptActions() {
           <Link to="/dashboard" className="btn">
             Dashboard
           </Link>
+
+          {user.is_admin && (
+            <Link to="/admin" className="btn">
+              Admin Panel
+            </Link>
+          )}
         </>
       )}
 
@@ -111,10 +118,7 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/prompts/:id"
-          element={<PromptDetails />}
-        />
+        <Route path="/prompts/:id" element={<PromptDetails />} />
 
         <Route
           path="/dashboard"
@@ -126,19 +130,17 @@ export default function App() {
         />
 
         <Route
-          path="/ai/improve"
-          element={<AIImprove />}
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly>
+              <Admin />
+            </ProtectedRoute>
+          }
         />
 
-        <Route
-          path="/ai/generate"
-          element={<AIGenerate />}
-        />
-
-        <Route
-          path="/ai/score"
-          element={<AIScore />}
-        />
+        <Route path="/ai/improve" element={<AIImprove />} />
+        <Route path="/ai/generate" element={<AIGenerate />} />
+        <Route path="/ai/score" element={<AIScore />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

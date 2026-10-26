@@ -1,4 +1,4 @@
-"""Central configuration for the PromptVault API.
+﻿"""Central configuration for the PromptVault API.
 
 Every value can be overridden with an environment variable so the same
 code runs locally, in Docker and on a host.
@@ -28,3 +28,9 @@ CORS_ORIGINS = [
 # deterministic local heuristic instead of a real LLM.
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+# Local development only: disabled by default.
+PROMPTVAULT_DEV_ADMIN = os.getenv("PROMPTVAULT_DEV_ADMIN", "0") == "1"
+
+
+# Local development only; disabled by default.
