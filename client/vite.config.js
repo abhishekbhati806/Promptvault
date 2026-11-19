@@ -3,9 +3,12 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    sourcemap: false,
+    target: 'es2022',
+  },
   server: {
-    host: '0.0.0.0',
-    allowedHosts: true,
+    host: '127.0.0.1',
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',

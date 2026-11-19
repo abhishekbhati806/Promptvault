@@ -1,5 +1,46 @@
 [project]
-name = "app"
-version = "0.1.0"
-dependencies = [ "fastapi>=0.110, <1.0", "uvicorn[standard]>=0.29", "pymongo>=4.7", "pydantic[email]>=2.6", "email-validator>=2.1", "python-dotenv>=1.0", "python-jose[cryptography]>=3.3", "passlib[bcrypt]>=1.7.4", "bcrypt==4.0.1" ]
-requires-python = "~=3.13.0"
+name = "promptvault"
+version = "1.0.0"
+description = "Full-stack AI prompt library built with React, FastAPI, and Supabase."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi>=0.115.0,<1.0",
+  "uvicorn[standard]>=0.30.0,<1.0",
+  "pydantic[email]>=2.9.0,<3.0",
+  "email-validator>=2.2.0,<3.0",
+  "python-dotenv>=1.0.1,<2.0",
+  "PyJWT>=2.9.0,<3.0",
+  "bcrypt>=4.2.0,<5.0",
+]
+
+[project.optional-dependencies]
+ai = ["openai>=1.50.0,<3.0"]
+dev = [
+  "pytest>=8.3.0,<10.0",
+  "httpx>=0.27.0,<1.0",
+  "ruff>=0.8.0,<1.0",
+  "pip-audit>=2.7.0,<3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["server/tests"]
+pythonpath = ["server"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["server", "api"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = [
+  "B008",   # FastAPI Depends() in default arguments is idiomatic
+  "E501",   # Keep curated prompt strings readable
+  "S310",   # urllib opens only validated HTTPS SUPABASE_URL
+]
+
+[tool.ruff.lint.per-file-ignores]
+"server/tests/**" = ["E402", "S101", "S105", "S106", "S107"]

@@ -1,21 +1,38 @@
-# Dependencies
-node_modules/
+# Environment & secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
 
-# Environment
-.env
-.env.local
-
-# Builds
+# Node / Frontend
+node_modules/
 dist/
 build/
+coverage/
+*.tsbuildinfo
 
-# Misc
-.DS_Store
-*.log
-.pytest_cache/
+# Deployment & tooling
 .vercel/
 .vercel
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

@@ -3,7 +3,8 @@
   "buildCommand": "npm --prefix client ci && npm --prefix client run build",
   "functions": {
     "api/index.py": {
-      "includeFiles": "{server/**,client/dist/**}"
+      "includeFiles": "{server/**,client/dist/**}",
+      "excludeFiles": "server/tests/**"
     }
   }
 }

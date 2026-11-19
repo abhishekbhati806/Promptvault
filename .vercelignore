@@ -1,10 +1,26 @@
-node_modules/
-client/node_modules/
-server/.venv/
+# Secrets & local configs
+.env
+.env.*
+!.env.example
+
+# Git & CI metadata
+.git/
+.github/
+
+# Local caches, virtualenvs, and tests
 .venv/
 venv/
 __pycache__/
-*.pyc
-.git/
-.env
-.env.local
+.pytest_cache/
+.ruff_cache/
+server/tests/
+supabase/
+
+# Frontend dev dependencies (rebuilt cleanly during Vercel build)
+client/node_modules/
+
+# Docs & logs
+*.md
+LICENSE
+*.log
+.DS_Store

@@ -52,7 +52,7 @@ export default function PromptForm({
 
     const tags = form.tags
       .split(',')
-      .map((tag) => tag.trim().replace(/^#/, ''))
+      .map((tag) => tag.trim().replace(/^#/, '').slice(0, 30))
       .filter(Boolean)
       .slice(0, 10);
 
@@ -113,8 +113,10 @@ export default function PromptForm({
           placeholder={'You are an expert...\n1. Do this...\n2. Return that...'}
           rows={8}
           minLength={10}
+          maxLength={8000}
           required
         />
+        <span className="field-hint">{form.prompt.length}/8000 characters (min 10)</span>
       </div>
 
       <div className="form-row">

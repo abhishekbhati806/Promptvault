@@ -1,8 +1,10 @@
-"""User favorite prompts endpoints."""
+"""User favorite prompts (bookmarks) routes."""
 
-from fastapi import APIRouter, Depends, status
+from __future__ import annotations
 
-from routers.auth import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from dependencies import get_current_user
 from routers.prompts import find_prompt
 from services.supabase_db import (
     db_add_favorite,
@@ -21,12 +23,12 @@ def list_favorites(user: dict = Depends(get_current_user)):
     if supabase_enabled():
         return db_list_favorites(user["id"])
     ids = _MEM_FAVORITES.get(user["id"], set())
-    out = []
+    out: list[dict] = []
     for pid in ids:
         try:
             out.append(find_prompt(pid))
-        except Exception:
-            pass
+        except HTTPException:
+            continue
     return out
 
 

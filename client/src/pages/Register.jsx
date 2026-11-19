@@ -77,11 +77,11 @@ export default function Register() {
               id="register-password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              minLength={6}
-              maxLength={100}
+              minLength={8}
+              maxLength={72}
               required
             />
             <button
@@ -93,7 +93,7 @@ export default function Register() {
               {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
-          <p className="muted auth-hint">Use at least 6 characters.</p>
+          <p className="muted auth-hint">Use 8–72 characters.</p>
 
           {error && <p className="alert alert-error" role="alert">{error}</p>}
 

@@ -3,6 +3,15 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { authRequest } from '../utils/auth.js';
 import { useAuth } from '../context/useAuth.js';
 
+function getSafeRedirectPath(candidate) {
+  if (typeof candidate !== 'string') return '/dashboard';
+  const trimmed = candidate.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('\\')) {
+    return '/dashboard';
+  }
+  return trimmed;
+}
+
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -29,7 +38,7 @@ export default function Login() {
       });
 
       login(result.access_token, result.user);
-      navigate(location.state?.from || '/dashboard', { replace: true });
+      navigate(getSafeRedirectPath(location.state?.from), { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

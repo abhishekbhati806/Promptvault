@@ -1,13 +1,15 @@
-"""Prompt CRUD and likes API with owner-based access control."""
+"""Prompt CRUD and likes API with strict owner-based access control."""
+
+from __future__ import annotations
 
 from copy import deepcopy
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
 
+from dependencies import get_current_user
 from models.prompt import new_prompt_id, now_utc
-from models.schemas import PromptCreate
-from routers.auth import get_current_user
+from schemas.prompt import PromptCreate, PromptUpdate
 from seed import PROMPTS
 from services.supabase_db import (
     db_create_prompt,
@@ -22,17 +24,14 @@ from services.supabase_db import (
 
 router = APIRouter(prefix="/api/prompts", tags=["prompts"])
 
-
-class PromptUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=3, max_length=100)
-    description: str | None = Field(default=None, min_length=1, max_length=500)
-    prompt: str | None = Field(default=None, min_length=1)
-    category: str | None = Field(default=None, min_length=1)
-    tags: list[str] | None = None
-    difficulty: str | None = None
+_SORT_TO_DB_ORDER = {
+    "newest": "created_at.desc",
+    "likes": "likes.desc",
+    "title": "title.asc",
+}
 
 
-def find_prompt(prompt_id: str):
+def find_prompt(prompt_id: str) -> dict:
     if supabase_enabled():
         prompt = db_get_prompt(prompt_id)
         if prompt:
@@ -45,14 +44,15 @@ def find_prompt(prompt_id: str):
     raise HTTPException(status_code=404, detail="Prompt not found")
 
 
-def get_all_prompts() -> list[dict]:
+def get_all_prompts(order: str = "created_at.desc") -> list[dict]:
     if supabase_enabled():
-        return db_list_prompts()
+        return db_list_prompts(order=order)
     return deepcopy(PROMPTS)
 
 
-def require_prompt_owner(prompt: dict, user: dict):
-    if prompt.get("owner_id") != user["id"]:
+def require_prompt_owner(prompt: dict, user: dict) -> None:
+    owner_id = prompt.get("owner_id")
+    if not owner_id or owner_id != user["id"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only modify your own prompts",
@@ -61,30 +61,34 @@ def require_prompt_owner(prompt: dict, user: dict):
 
 @router.get("")
 def list_prompts(
-    search: str = "",
-    category: str = "all",
-    sort: str = "newest",
-    skip: int = Query(0, ge=0),
+    search: str = Query("", max_length=200),
+    category: str = Query("all", max_length=40),
+    sort: Literal["newest", "likes", "title"] = "newest",
+    skip: int = Query(0, ge=0, le=5000),
     limit: int = Query(20, ge=1, le=100),
 ):
-    results = get_all_prompts()
+    results = get_all_prompts(order=_SORT_TO_DB_ORDER[sort])
 
-    if category and category.lower() != "all":
+    cat = category.strip().lower()
+    if cat and cat != "all":
         results = [
-            p for p in results
-            if p.get("category", "").lower() == category.lower()
+            p for p in results if p.get("category", "").lower() == cat
         ]
 
-    if search.strip():
-        term = search.strip().lower()
+    term = search.strip().lower()
+    if term:
         results = [
-            p for p in results
-            if term in " ".join([
-                p.get("title", ""),
-                p.get("description", ""),
-                p.get("prompt", ""),
-                " ".join(p.get("tags", [])),
-            ]).lower()
+            p
+            for p in results
+            if term
+            in " ".join(
+                [
+                    p.get("title", ""),
+                    p.get("description", ""),
+                    p.get("prompt", ""),
+                    " ".join(p.get("tags", [])),
+                ]
+            ).lower()
         ]
 
     if sort == "likes":
@@ -92,12 +96,9 @@ def list_prompts(
     elif sort == "title":
         results.sort(key=lambda p: p.get("title", "").lower())
     else:
-        results.sort(
-            key=lambda p: str(p.get("created_at") or ""),
-            reverse=True,
-        )
+        results.sort(key=lambda p: str(p.get("created_at") or ""), reverse=True)
 
-    return results[skip:skip + limit]
+    return results[skip : skip + limit]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -105,16 +106,16 @@ def create_prompt(
     payload: PromptCreate,
     user: dict = Depends(get_current_user),
 ):
-    created = now_utc()
-    new_prompt = payload.model_dump()
-    new_prompt.update({
+    created = now_utc().isoformat()
+    new_prompt = {
+        **payload.model_dump(),
         "id": new_prompt_id(),
         "author": user["name"],
         "owner_id": user["id"],
         "likes": 0,
         "featured": False,
-        "created_at": created.isoformat() if supabase_enabled() else created,
-    })
+        "created_at": created,
+    }
 
     if supabase_enabled():
         return db_create_prompt(new_prompt)
@@ -123,10 +124,10 @@ def create_prompt(
     return deepcopy(new_prompt)
 
 
-# Keep this route before /{prompt_id} so "mine" isn't treated as an ID.
+# Declared before `/{prompt_id}` so "mine" is never matched as an ID.
 @router.get("/mine")
 def get_my_prompts(user: dict = Depends(get_current_user)):
-    """Return only prompts owned by the authenticated user."""
+    """Return prompts created by the authenticated user."""
     if supabase_enabled():
         return db_list_user_prompts(user["id"])
 
@@ -135,10 +136,7 @@ def get_my_prompts(user: dict = Depends(get_current_user)):
         for prompt in PROMPTS
         if prompt.get("owner_id") == user["id"]
     ]
-    results.sort(
-        key=lambda prompt: str(prompt.get("created_at") or ""),
-        reverse=True,
-    )
+    results.sort(key=lambda p: str(p.get("created_at") or ""), reverse=True)
     return results
 
 
@@ -172,7 +170,6 @@ def update_prompt(
 
     for key, value in updates.items():
         existing[key] = value
-
     return deepcopy(existing)
 
 
@@ -189,10 +186,7 @@ def delete_prompt(
     else:
         PROMPTS.remove(existing)
 
-    return {
-        "message": "Prompt deleted successfully",
-        "id": prompt_id,
-    }
+    return {"message": "Prompt deleted successfully", "id": prompt_id}
 
 
 @router.post("/{prompt_id}/like")
@@ -205,7 +199,4 @@ def like_prompt(prompt_id: str):
 
     existing = find_prompt(prompt_id)
     existing["likes"] = existing.get("likes", 0) + 1
-    return {
-        "id": prompt_id,
-        "likes": existing["likes"],
-    }
+    return {"id": prompt_id, "likes": existing["likes"]}

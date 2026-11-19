@@ -74,7 +74,10 @@ export default function AIGenerate() {
         description: desc.length >= 10 ? desc : `${desc} — generated with PromptVault.`,
         prompt: result.prompt,
         category: result.category || form.category,
-        tags: (result.tags || []).slice(0, 10),
+        tags: (result.tags || [])
+          .map((tag) => String(tag).trim().slice(0, 30))
+          .filter(Boolean)
+          .slice(0, 10),
       });
       setSaved(true);
     } catch (err) {

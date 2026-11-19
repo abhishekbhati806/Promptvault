@@ -2,8 +2,7 @@
 
 Usage:  cd server && python seed.py
 """
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 PROMPTS = [
     {
@@ -24,7 +23,7 @@ PROMPTS = [
         "difficulty": "advanced",
         "likes": 214,
         "featured": True,
-        "created_at": datetime(2026, 7, 14, 9, 30, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 7, 14, 9, 30, tzinfo=UTC),
     },
     {
         "id": "p-02",
@@ -45,7 +44,7 @@ PROMPTS = [
         "difficulty": "intermediate",
         "likes": 342,
         "featured": True,
-        "created_at": datetime(2026, 7, 28, 14, 5, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 7, 28, 14, 5, tzinfo=UTC),
     },
     {
         "id": "p-03",
@@ -65,7 +64,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 289,
         "featured": True,
-        "created_at": datetime(2026, 8, 9, 18, 40, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 9, 18, 40, tzinfo=UTC),
     },
     {
         "id": "p-04",
@@ -84,7 +83,7 @@ PROMPTS = [
         "difficulty": "intermediate",
         "likes": 176,
         "featured": False,
-        "created_at": datetime(2026, 8, 12, 11, 0, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 12, 11, 0, tzinfo=UTC),
     },
     {
         "id": "p-05",
@@ -105,7 +104,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 154,
         "featured": False,
-        "created_at": datetime(2026, 8, 15, 8, 20, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 15, 8, 20, tzinfo=UTC),
     },
     {
         "id": "p-06",
@@ -124,7 +123,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 201,
         "featured": False,
-        "created_at": datetime(2026, 8, 20, 7, 45, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 20, 7, 45, tzinfo=UTC),
     },
     {
         "id": "p-07",
@@ -145,7 +144,7 @@ PROMPTS = [
         "difficulty": "intermediate",
         "likes": 168,
         "featured": False,
-        "created_at": datetime(2026, 8, 24, 16, 30, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 24, 16, 30, tzinfo=UTC),
     },
     {
         "id": "p-08",
@@ -166,7 +165,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 233,
         "featured": False,
-        "created_at": datetime(2026, 8, 27, 13, 15, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 8, 27, 13, 15, tzinfo=UTC),
     },
     {
         "id": "p-09",
@@ -185,7 +184,7 @@ PROMPTS = [
         "difficulty": "intermediate",
         "likes": 121,
         "featured": False,
-        "created_at": datetime(2026, 9, 2, 10, 10, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 9, 2, 10, 10, tzinfo=UTC),
     },
     {
         "id": "p-10",
@@ -205,7 +204,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 187,
         "featured": False,
-        "created_at": datetime(2026, 9, 5, 19, 0, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 9, 5, 19, 0, tzinfo=UTC),
     },
     {
         "id": "p-11",
@@ -225,7 +224,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 142,
         "featured": False,
-        "created_at": datetime(2026, 9, 8, 12, 25, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 9, 8, 12, 25, tzinfo=UTC),
     },
     {
         "id": "p-12",
@@ -245,7 +244,7 @@ PROMPTS = [
         "difficulty": "beginner",
         "likes": 198,
         "featured": False,
-        "created_at": datetime(2026, 9, 11, 9, 0, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 9, 11, 9, 0, tzinfo=UTC),
     },
 ]
 

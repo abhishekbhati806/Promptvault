@@ -1,4 +1,6 @@
-"""Admin endpoints for prompt moderation."""
+"""Role-guarded administrator moderation endpoints."""
+
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Response, status
 
@@ -14,7 +16,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 @router.get("/stats")
 def admin_stats(_user: dict = Depends(get_admin_user)):
     prompts = get_all_prompts()
-    categories = {}
+    categories: dict[str, int] = {}
     for prompt in prompts:
         category = prompt.get("category", "general")
         categories[category] = categories.get(category, 0) + 1
@@ -25,7 +27,7 @@ def admin_stats(_user: dict = Depends(get_admin_user)):
         "featured": sum(bool(p.get("featured")) for p in prompts),
         "by_category": [
             {"category": name, "count": count}
-            for name, count in categories.items()
+            for name, count in sorted(categories.items())
         ],
     }
 
