@@ -76,6 +76,21 @@ def test_health_and_security_headers(client: TestClient):
     assert "default-src 'self'" in res.headers["content-security-policy"]
 
 
+def test_disabled_docs_not_served_by_spa(client: TestClient, monkeypatch):
+    import main
+
+    if not main.SERVE_SPA:
+        pytest.skip("SPA build is not present")
+    # Development registers docs routes, so exercise the fallback directly.
+    monkeypatch.setattr(main, "ENABLE_API_DOCS", False)
+    from fastapi import HTTPException
+
+    for path in ("docs", "redoc", "openapi.json"):
+        with pytest.raises(HTTPException) as exc:
+            main.serve_spa(path)
+        assert exc.value.status_code == 404
+
+
 def test_private_routes_send_no_store_cache_control(client: TestClient):
     token, _ = _register_and_login(client)
     res = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})

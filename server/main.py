@@ -71,7 +71,11 @@ if SERVE_SPA:
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_spa(full_path: str):
-        if full_path == "api" or full_path.startswith("api/"):
+        if (
+            full_path == "api"
+            or full_path.startswith("api/")
+            or (not ENABLE_API_DOCS and full_path in {"docs", "redoc", "openapi.json"})
+        ):
             raise HTTPException(status_code=404, detail="Not found")
         if full_path and "\x00" not in full_path:
             candidate = (CLIENT_DIST / full_path).resolve()
