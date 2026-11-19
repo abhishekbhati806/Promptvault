@@ -1,6 +1,6 @@
-
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
+import { getErrorMessage } from '../utils/helpers.js';
 
 export default function Admin() {
   const [stats, setStats] = useState(null);
@@ -8,6 +8,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
+  const [confirmId, setConfirmId] = useState('');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -22,7 +23,7 @@ export default function Admin() {
       setStats(nextStats);
       setPrompts(nextPrompts);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not load admin data.');
+      setError(getErrorMessage(err, 'Could not load admin data.'));
     } finally {
       setLoading(false);
     }
@@ -30,28 +31,19 @@ export default function Admin() {
 
   useEffect(() => {
     let active = true;
-
-    async function initialLoad() {
-      try {
-        const [nextStats, nextPrompts] = await Promise.all([
-          api.adminStats(),
-          api.adminPrompts(),
-        ]);
-
+    Promise.all([api.adminStats(), api.adminPrompts()])
+      .then(([nextStats, nextPrompts]) => {
         if (active) {
           setStats(nextStats);
           setPrompts(nextPrompts);
         }
-      } catch (err) {
-        if (active) {
-          setError(err.response?.data?.detail || 'Could not load admin data.');
-        }
-      } finally {
+      })
+      .catch((err) => {
+        if (active) setError(getErrorMessage(err, 'Could not load admin data.'));
+      })
+      .finally(() => {
         if (active) setLoading(false);
-      }
-    }
-
-    initialLoad();
+      });
     return () => {
       active = false;
     };
@@ -65,77 +57,89 @@ export default function Admin() {
       await api.toggleFeature(prompt.id);
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not update prompt.');
+      setError(getErrorMessage(err, 'Could not update prompt.'));
     } finally {
       setBusyId('');
     }
   }
 
   async function deletePrompt(prompt) {
-    if (!window.confirm(`Delete "${prompt.title}" permanently?`)) return;
-
     setBusyId(prompt.id);
     setError('');
 
     try {
       await api.deleteAdminPrompt(prompt.id);
+      setConfirmId('');
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not delete prompt.');
+      setError(getErrorMessage(err, 'Could not delete prompt.'));
     } finally {
       setBusyId('');
     }
   }
 
   return (
-    <main className="container page-section admin-page">
-      <h1>Admin Panel</h1>
-      <p className="muted">Manage PromptVault prompts and review platform statistics.</p>
+    <main className="container admin-page">
+      <div className="my-prompts-head">
+        <div>
+          <h1>🛡️ Admin Panel</h1>
+          <p className="muted">Moderate PromptVault prompts and review platform statistics.</p>
+        </div>
+        <button type="button" className="btn" onClick={loadData}>
+          ↻ Refresh
+        </button>
+      </div>
 
-      {error && <p role="alert" className="admin-error">{error}</p>}
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+        </div>
+      )}
 
       {loading ? (
-        <p>Loading admin data...</p>
+        <p className="muted">Loading admin data…</p>
       ) : (
         <>
           <section className="admin-stats">
-            <article className="dashboard-card">
-              <h3>Total prompts</h3>
-              <p>{stats?.total_prompts ?? 0}</p>
+            <article className="dashboard-card stat-card">
+              <p className="muted">Total prompts</p>
+              <h2 className="stat-value">{stats?.total_prompts ?? 0}</h2>
             </article>
-            <article className="dashboard-card">
-              <h3>Registered users</h3>
-              <p>{stats?.total_users ?? 0}</p>
+            <article className="dashboard-card stat-card">
+              <p className="muted">Registered users</p>
+              <h2 className="stat-value">{stats?.total_users ?? 0}</h2>
             </article>
-            <article className="dashboard-card">
-              <h3>Featured prompts</h3>
-              <p>{stats?.featured ?? 0}</p>
+            <article className="dashboard-card stat-card">
+              <p className="muted">Featured prompts</p>
+              <h2 className="stat-value">{stats?.featured ?? 0}</h2>
             </article>
           </section>
 
-          <h2>Prompt moderation</h2>
+          <h2 style={{ marginBottom: '0.9rem' }}>Prompt moderation</h2>
 
           {prompts.length === 0 ? (
-            <p>No prompts found.</p>
+            <p className="muted">No prompts found.</p>
           ) : (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <div className="table-wrap">
+              <table className="table">
                 <thead>
                   <tr>
                     <th>Prompt</th>
                     <th>Category</th>
                     <th>Featured</th>
-                    <th>Actions</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {prompts.map((prompt) => (
                     <tr key={prompt.id}>
                       <td>{prompt.title || 'Untitled prompt'}</td>
-                      <td>{prompt.category || 'General'}</td>
-                      <td>{prompt.featured ? 'Yes' : 'No'}</td>
                       <td>
-                        <div className="admin-actions">
+                        <span className="tag">{prompt.category || 'general'}</span>
+                      </td>
+                      <td>{prompt.featured ? '⭐ Yes' : 'No'}</td>
+                      <td>
+                        <div className="row-actions">
                           <button
                             type="button"
                             className="btn btn-small"
@@ -144,14 +148,34 @@ export default function Admin() {
                           >
                             {prompt.featured ? 'Unfeature' : 'Feature'}
                           </button>
-                          <button
-                            type="button"
-                            className="btn btn-small"
-                            disabled={busyId === prompt.id}
-                            onClick={() => deletePrompt(prompt)}
-                          >
-                            Delete
-                          </button>
+                          {confirmId === prompt.id ? (
+                            <>
+                              <button
+                                type="button"
+                                className="btn btn-small btn-danger"
+                                disabled={busyId === prompt.id}
+                                onClick={() => deletePrompt(prompt)}
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-small btn-ghost"
+                                onClick={() => setConfirmId('')}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn btn-small btn-danger"
+                              disabled={busyId === prompt.id}
+                              onClick={() => setConfirmId(prompt.id)}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -160,19 +184,6 @@ export default function Admin() {
               </table>
             </div>
           )}
-
-          <h2>Prompts by category</h2>
-          <ul>
-            {(stats?.by_category || []).map((item) => (
-              <li key={item.category}>
-                {item.category}: {item.count}
-              </li>
-            ))}
-          </ul>
-
-          <button type="button" className="btn" onClick={loadData}>
-            Refresh data
-          </button>
         </>
       )}
     </main>

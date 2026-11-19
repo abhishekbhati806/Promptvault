@@ -1,12 +1,58 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatDate } from '../utils/helpers.js';
+import { api } from '../api/client.js';
+import { categoryMeta } from '../data/categories.js';
+import { copyText, formatDate } from '../utils/helpers.js';
 
-export default function PromptCard({ prompt }) {
+export default function PromptCard({ prompt, onLiked }) {
+  const [localLikes, setLocalLikes] = useState(null);
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const likes = localLikes ?? prompt.likes ?? 0;
+  const meta = categoryMeta(prompt.category);
+
+  const handleLike = async () => {
+    if (liking) return;
+    setLiking(true);
+    try {
+      const res = await api.likePrompt(prompt.id);
+      const nextLikes = res?.likes ?? likes + 1;
+      setLocalLikes(nextLikes);
+      setLiked(true);
+      onLiked?.(prompt.id, nextLikes);
+    } catch {
+      /* keep current count if offline */
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    const ok = await copyText(prompt.prompt);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    }
+  };
+
   return (
     <article className="prompt-card">
       <div className="prompt-card-top">
-        <span className="tag">{prompt.category}</span>
-        <span className="tag tag-alt">❤ {prompt.likes}</span>
+        <span className="tag">
+          <span aria-hidden="true">{meta.icon}</span> {meta.name}
+        </span>
+        <button
+          type="button"
+          className={`like-btn ${liked ? 'liked' : ''}`}
+          onClick={handleLike}
+          disabled={liking}
+          aria-label={`Like ${prompt.title} (${likes} likes)`}
+          title="Like this prompt"
+        >
+          ❤ {likes}
+        </button>
       </div>
       <h3>
         <Link to={`/prompts/${prompt.id}`} className="prompt-card-title-link">
@@ -25,12 +71,23 @@ export default function PromptCard({ prompt }) {
         </div>
       )}
       <div className="prompt-card-foot">
-        <span className="muted">
-          by {prompt.author} · {formatDate(prompt.created_at)}
+        <span className="muted card-author">
+          by {prompt.author}
+          {prompt.created_at ? ` · ${formatDate(prompt.created_at)}` : ''}
         </span>
-        <Link to={`/prompts/${prompt.id}`} className="card-link">
-          View →
-        </Link>
+        <div className="card-actions">
+          <button
+            type="button"
+            className={`card-copy-btn ${copied ? 'copied' : ''}`}
+            onClick={handleCopy}
+            aria-label={`Copy ${prompt.title}`}
+          >
+            {copied ? '✓ Copied' : 'Copy'}
+          </button>
+          <Link to={`/prompts/${prompt.id}`} className="card-link">
+            View →
+          </Link>
+        </div>
       </div>
     </article>
   );

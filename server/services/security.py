@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import datetime, timedelta, timezone
 
 from jose import jwt
@@ -20,11 +20,13 @@ def verify_password(password: str, password_hash: str) -> bool:
     return _password_context.verify(password, password_hash)
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, extra: dict | None = None) -> str:
     expires = datetime.now(timezone.utc) + timedelta(
         minutes=ACCESS_TOKEN_MINUTES
     )
     payload = {"sub": user_id, "exp": expires}
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 

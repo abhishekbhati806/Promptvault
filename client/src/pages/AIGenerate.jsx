@@ -3,93 +3,161 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { CATEGORIES } from '../data/categories.js';
 import { useAuth } from '../context/useAuth.js';
+import { copyText, getErrorMessage } from '../utils/helpers.js';
+
+const SAMPLE_TOPICS = [
+  'System design interview prep',
+  'REST API security audit',
+  'Weekly study schedule planner',
+];
 
 export default function AIGenerate() {
   const { user } = useAuth();
-  const [form, setForm] = useState({ topic: '', category: 'general', style: 'step-by-step' });
+  const [form, setForm] = useState({
+    topic: '',
+    category: 'general',
+    style: 'step-by-step',
+  });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
-    api.aiStatus().then(setStatus).catch(() => setStatus(null));
+    api
+      .aiStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
   }, []);
 
-  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const set = (key) => (e) => {
+    setError('');
+    setForm({ ...form, [key]: e.target.value });
+  };
 
   const run = async (e) => {
     e.preventDefault();
     if (form.topic.trim().length < 3) {
-      setError('Give me a topic first (at least 3 characters).');
+      setError('Give a topic first (at least 3 characters).');
       return;
     }
     setLoading(true);
     setError('');
     setResult(null);
     setSaved(false);
+    setCopied(false);
     try {
-      setResult(await api.generatePrompt(form));
+      setResult(
+        await api.generatePrompt({
+          ...form,
+          topic: form.topic.trim(),
+        })
+      );
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not generate a prompt. Is the API running?');
+      setError(getErrorMessage(err, 'Could not generate a prompt. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
   const save = async () => {
+    if (!result || saving) return;
+    setSaving(true);
+    setError('');
     try {
+      const desc = (result.description || `Prompt for ${form.topic}`).slice(0, 300);
       await api.createPrompt({
-        title: result.title,
-        description: result.description,
+        title: (result.title || 'Generated Prompt').slice(0, 120),
+        description: desc.length >= 10 ? desc : `${desc} — generated with PromptVault.`,
         prompt: result.prompt,
         category: result.category || form.category,
-        tags: result.tags || [],
+        tags: (result.tags || []).slice(0, 10),
       });
       setSaved(true);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Could not save the prompt.');
+      setError(getErrorMessage(err, 'Could not save the prompt.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!result?.prompt) return;
+    const ok = await copyText(result.prompt);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     }
   };
 
   return (
     <main className="container ai-page">
-      <h1>🧪 Prompt Generator</h1>
-      <p className="muted">
-        Tell it what you want and get a ready-to-use prompt.
+      <div className="ai-header">
+        <div>
+          <h1>🧪 Prompt Generator</h1>
+          <p className="muted">
+            Describe a goal or topic and get a structured, ready-to-use prompt.
+          </p>
+        </div>
         {status && (
           <span className={`mode-pill mode-${status.mode}`}>
-            {status.mode === 'openai' ? `Live AI (${status.model})` : 'Mock mode — no API key set'}
+            {status.mode === 'openai'
+              ? `● Live AI (${status.model})`
+              : '⚡ Instant Heuristic Engine'}
           </span>
         )}
-      </p>
+      </div>
 
       <div className="ai-grid">
         <form className="ai-panel" onSubmit={run}>
-          <h3>What should it do?</h3>
-          <label>
-            Topic
+          <h2>What should it do?</h2>
+
+          <label htmlFor="gen-topic">
+            Topic or goal
             <input
+              id="gen-topic"
+              type="text"
               value={form.topic}
               onChange={set('topic')}
-              placeholder="e.g. preparing for a Python interview"
+              placeholder="e.g. preparing for a Python backend interview"
+              maxLength={300}
+              required
             />
           </label>
+
+          <div className="sample-chips">
+            {SAMPLE_TOPICS.map((sample) => (
+              <button
+                key={sample}
+                type="button"
+                className="sample-chip"
+                onClick={() => {
+                  setError('');
+                  setForm((cur) => ({ ...cur, topic: sample }));
+                }}
+              >
+                {sample}
+              </button>
+            ))}
+          </div>
+
           <div className="form-row">
-            <label>
+            <label htmlFor="gen-category">
               Category
-              <select value={form.category} onChange={set('category')}>
+              <select id="gen-category" value={form.category} onChange={set('category')}>
                 {CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {c.icon} {c.name}
                   </option>
                 ))}
               </select>
             </label>
-            <label>
+            <label htmlFor="gen-style">
               Style
-              <select value={form.style} onChange={set('style')}>
+              <select id="gen-style" value={form.style} onChange={set('style')}>
                 <option value="step-by-step">Step-by-step</option>
                 <option value="checklist">Checklist</option>
                 <option value="creative">Creative</option>
@@ -98,15 +166,25 @@ export default function AIGenerate() {
               </select>
             </label>
           </div>
-          {error && !result && <div className="alert alert-error">{error}</div>}
-          <button className="btn btn-primary" disabled={loading}>
+
+          {error && !result && (
+            <div className="alert alert-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Generating…' : '🧪 Generate prompt'}
           </button>
         </form>
 
-        <div className="ai-panel">
-          <h3>Generated prompt</h3>
-          {!result && !loading && <p className="muted">Your new prompt will appear here.</p>}
+        <section className="ai-panel">
+          <h2>Generated prompt</h2>
+          {!result && !loading && (
+            <p className="muted">
+              Pick a topic and style on the left, then click <strong>Generate prompt</strong>.
+            </p>
+          )}
           {loading && <p className="muted">Writing your prompt…</p>}
           {result && (
             <>
@@ -122,27 +200,39 @@ export default function AIGenerate() {
                   ))}
                 </div>
               )}
-              {error && <div className="alert alert-error">{error}</div>}
+              {error && (
+                <div className="alert alert-error" role="alert">
+                  {error}
+                </div>
+              )}
               <div className="ai-result-actions">
+                <button type="button" className="btn btn-primary" onClick={handleCopy}>
+                  {copied ? '✓ Copied!' : '📋 Copy prompt'}
+                </button>
                 {user ? (
                   saved ? (
-                    <Link to="/prompts/mine" className="btn">
-                      ✓ Saved — view My prompts
+                    <Link to="/prompts/mine" className="btn btn-saved">
+                      ✓ Saved — view My Prompts
                     </Link>
                   ) : (
-                    <button className="btn" onClick={save}>
-                      💾 Save to vault
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={saving}
+                      onClick={save}
+                    >
+                      {saving ? 'Saving…' : '💾 Save to vault'}
                     </button>
                   )
                 ) : (
-                  <span className="muted">
-                    <Link to="/register">Create an account</Link> to save this prompt.
-                  </span>
+                  <Link to="/register" className="btn">
+                    Sign up to save
+                  </Link>
                 )}
               </div>
             </>
           )}
-        </div>
+        </section>
       </div>
     </main>
   );

@@ -9,6 +9,7 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -20,10 +21,14 @@ export default function Register() {
     setBusy(true);
 
     try {
-      await authRequest('/api/auth/register', { name, email, password });
+      await authRequest('/api/auth/register', {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
       navigate('/login', {
         replace: true,
-        state: { message: 'Account created. Log in with your new credentials.' },
+        state: { message: 'Account created! Log in with your new credentials.' },
       });
     } catch (err) {
       setError(err.message);
@@ -38,7 +43,7 @@ export default function Register() {
         <p className="hero-badge">JOIN PROMPTVAULT</p>
         <h1>Create your account</h1>
         <p className="muted auth-description">
-          Set up your account to access your workspace.
+          Publish your own prompts and bookmark favorites across devices.
         </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -47,10 +52,11 @@ export default function Register() {
             id="register-name"
             type="text"
             autoComplete="name"
+            placeholder="e.g. Abhishek Bhati"
             value={name}
             onChange={(event) => setName(event.target.value)}
             minLength={2}
-            maxLength={80}
+            maxLength={60}
             required
           />
 
@@ -59,28 +65,40 @@ export default function Register() {
             id="register-email"
             type="email"
             autoComplete="email"
+            placeholder="you@example.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
 
           <label htmlFor="register-password">Password</label>
-          <input
-            id="register-password"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            maxLength={100}
-            required
-          />
+          <div className="password-wrap">
+            <input
+              id="register-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={6}
+              maxLength={100}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
           <p className="muted auth-hint">Use at least 6 characters.</p>
 
-          {error && <p className="auth-error" role="alert">{error}</p>}
+          {error && <p className="alert alert-error" role="alert">{error}</p>}
 
-          <button className="btn btn-primary btn-block" disabled={busy}>
-            {busy ? 'Creating account...' : 'Create account'}
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+            {busy ? 'Creating account…' : 'Create account'}
           </button>
         </form>
 

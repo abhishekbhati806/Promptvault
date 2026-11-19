@@ -1,5 +1,5 @@
-
-import { Routes, Route, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import Home from './pages/Home.jsx';
@@ -17,13 +17,33 @@ import Admin from './pages/Admin.jsx';
 import ProtectedRoute from './context/ProtectedRoute.jsx';
 import { useAuth } from './context/useAuth.js';
 
+function ScrollManager() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      const id = hash.slice(1);
+      const timer = setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }, 40);
+      return () => clearTimeout(timer);
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return undefined;
+  }, [pathname, hash]);
+
+  return null;
+}
+
 function NotFound() {
   return (
     <main className="container page-loading">
       <h1>404</h1>
-      <p>That page does not exist.</p>
-      <Link to="/" className="btn">
-        Go home
+      <p className="muted" style={{ marginBottom: '1.25rem' }}>
+        That page does not exist.
+      </p>
+      <Link to="/" className="btn btn-primary">
+        ← Back to PromptVault
       </Link>
     </main>
   );
@@ -31,58 +51,54 @@ function NotFound() {
 
 function PromptActions() {
   const { user } = useAuth();
+  const { pathname } = useLocation();
+
+  const itemClass = (path, primary = false) => {
+    if (primary) return 'tool-chip tool-chip-primary';
+    return `tool-chip ${pathname === path ? 'active' : ''}`;
+  };
 
   return (
-    <nav
-      className="container"
-      style={{
-        display: 'flex',
-        gap: '12px',
-        flexWrap: 'wrap',
-        paddingTop: '16px',
-        paddingBottom: '8px',
-      }}
-    >
-      {user && (
-        <>
-          <Link to="/prompts/new" className="btn btn-primary">
-            + Create Prompt
-          </Link>
-
-          <Link to="/prompts/mine" className="btn">
-            My Prompts
-          </Link>
-
-          <Link to="/dashboard" className="btn">
-            Dashboard
-          </Link>
-
-          {user.is_admin && (
-            <Link to="/admin" className="btn">
-              Admin Panel
+    <div className="tool-bar-wrap">
+      <nav className="container tool-bar" aria-label="Quick tools">
+        {user && (
+          <>
+            <Link to="/prompts/new" className={itemClass('/prompts/new', true)}>
+              + Create Prompt
             </Link>
-          )}
-        </>
-      )}
+            <Link to="/prompts/mine" className={itemClass('/prompts/mine')}>
+              📝 My Prompts
+            </Link>
+            <Link to="/dashboard" className={itemClass('/dashboard')}>
+              📊 Dashboard
+            </Link>
+            {user.is_admin && (
+              <Link to="/admin" className={itemClass('/admin')}>
+                🛡️ Admin
+              </Link>
+            )}
+            <span className="tool-divider" aria-hidden="true" />
+          </>
+        )}
 
-      <Link to="/ai/improve" className="btn">
-        AI Prompt Improver
-      </Link>
-
-      <Link to="/ai/generate" className="btn">
-        AI Prompt Generator
-      </Link>
-
-      <Link to="/ai/score" className="btn">
-        AI Prompt Scorer
-      </Link>
-    </nav>
+        <Link to="/ai/improve" className={itemClass('/ai/improve')}>
+          ✨ AI Improver
+        </Link>
+        <Link to="/ai/generate" className={itemClass('/ai/generate')}>
+          🧪 AI Generator
+        </Link>
+        <Link to="/ai/score" className={itemClass('/ai/score')}>
+          🎯 AI Scorer
+        </Link>
+      </nav>
+    </div>
   );
 }
 
 export default function App() {
   return (
     <div className="app">
+      <ScrollManager />
       <Navbar />
       <PromptActions />
 

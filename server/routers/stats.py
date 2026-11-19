@@ -1,17 +1,17 @@
-
 from collections import Counter
 
 from fastapi import APIRouter, Depends
 
 from routers.auth import get_current_user
-from seed import PROMPTS
+from routers.prompts import get_all_prompts
+from services.supabase_db import db_list_favorite_ids, supabase_enabled
 
 router = APIRouter(prefix="/api/stats", tags=["dashboard"])
 
 
 @router.get("/dashboard")
 def dashboard_stats(user: dict = Depends(get_current_user)):
-    prompts = list(PROMPTS)
+    prompts = get_all_prompts()
 
     categories = Counter(
         prompt.get("category", "general")
@@ -28,6 +28,12 @@ def dashboard_stats(user: dict = Depends(get_current_user)):
         if prompt.get("owner_id") == user["id"]
     ]
 
+    my_favorites = (
+        len(db_list_favorite_ids(user["id"]))
+        if supabase_enabled()
+        else 0
+    )
+
     recent_prompts = sorted(
         prompts,
         key=lambda prompt: str(prompt.get("created_at", "")),
@@ -37,7 +43,7 @@ def dashboard_stats(user: dict = Depends(get_current_user)):
     return {
         "total_prompts": len(prompts),
         "my_prompts": len(my_prompts),
-        "my_favorites": 0,
+        "my_favorites": my_favorites,
         "total_likes": sum(
             prompt.get("likes", 0) for prompt in prompts
         ),

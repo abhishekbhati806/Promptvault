@@ -1,4 +1,3 @@
-﻿
 """Prompt CRUD and likes API with owner-based access control."""
 
 from copy import deepcopy
@@ -10,6 +9,16 @@ from models.prompt import new_prompt_id, now_utc
 from models.schemas import PromptCreate
 from routers.auth import get_current_user
 from seed import PROMPTS
+from services.supabase_db import (
+    db_create_prompt,
+    db_delete_prompt,
+    db_get_prompt,
+    db_like_prompt,
+    db_list_prompts,
+    db_list_user_prompts,
+    db_update_prompt,
+    supabase_enabled,
+)
 
 router = APIRouter(prefix="/api/prompts", tags=["prompts"])
 
@@ -24,10 +33,22 @@ class PromptUpdate(BaseModel):
 
 
 def find_prompt(prompt_id: str):
+    if supabase_enabled():
+        prompt = db_get_prompt(prompt_id)
+        if prompt:
+            return prompt
+        raise HTTPException(status_code=404, detail="Prompt not found")
+
     for prompt in PROMPTS:
         if prompt.get("id") == prompt_id:
             return prompt
     raise HTTPException(status_code=404, detail="Prompt not found")
+
+
+def get_all_prompts() -> list[dict]:
+    if supabase_enabled():
+        return db_list_prompts()
+    return deepcopy(PROMPTS)
 
 
 def require_prompt_owner(prompt: dict, user: dict):
@@ -46,7 +67,7 @@ def list_prompts(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
 ):
-    results = deepcopy(PROMPTS)
+    results = get_all_prompts()
 
     if category and category.lower() != "all":
         results = [
@@ -72,7 +93,7 @@ def list_prompts(
         results.sort(key=lambda p: p.get("title", "").lower())
     else:
         results.sort(
-            key=lambda p: p.get("created_at") or "",
+            key=lambda p: str(p.get("created_at") or ""),
             reverse=True,
         )
 
@@ -84,15 +105,19 @@ def create_prompt(
     payload: PromptCreate,
     user: dict = Depends(get_current_user),
 ):
-    new_prompt = payload.dict()
+    created = now_utc()
+    new_prompt = payload.model_dump()
     new_prompt.update({
         "id": new_prompt_id(),
         "author": user["name"],
         "owner_id": user["id"],
         "likes": 0,
         "featured": False,
-        "created_at": now_utc(),
+        "created_at": created.isoformat() if supabase_enabled() else created,
     })
+
+    if supabase_enabled():
+        return db_create_prompt(new_prompt)
 
     PROMPTS.append(new_prompt)
     return deepcopy(new_prompt)
@@ -102,14 +127,16 @@ def create_prompt(
 @router.get("/mine")
 def get_my_prompts(user: dict = Depends(get_current_user)):
     """Return only prompts owned by the authenticated user."""
+    if supabase_enabled():
+        return db_list_user_prompts(user["id"])
+
     results = [
         deepcopy(prompt)
         for prompt in PROMPTS
         if prompt.get("owner_id") == user["id"]
     ]
-
     results.sort(
-        key=lambda prompt: prompt.get("created_at") or "",
+        key=lambda prompt: str(prompt.get("created_at") or ""),
         reverse=True,
     )
     return results
@@ -129,11 +156,22 @@ def update_prompt(
     existing = find_prompt(prompt_id)
     require_prompt_owner(existing, user)
 
-    updates = payload.dict(exclude_unset=True)
+    updates = {
+        k: v
+        for k, v in payload.model_dump(exclude_unset=True).items()
+        if v is not None
+    }
+
+    if supabase_enabled():
+        if not updates:
+            return existing
+        updated = db_update_prompt(prompt_id, updates)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Prompt not found")
+        return updated
 
     for key, value in updates.items():
-        if value is not None:
-            existing[key] = value
+        existing[key] = value
 
     return deepcopy(existing)
 
@@ -146,7 +184,10 @@ def delete_prompt(
     existing = find_prompt(prompt_id)
     require_prompt_owner(existing, user)
 
-    PROMPTS.remove(existing)
+    if supabase_enabled():
+        db_delete_prompt(prompt_id)
+    else:
+        PROMPTS.remove(existing)
 
     return {
         "message": "Prompt deleted successfully",
@@ -156,9 +197,14 @@ def delete_prompt(
 
 @router.post("/{prompt_id}/like")
 def like_prompt(prompt_id: str):
+    if supabase_enabled():
+        result = db_like_prompt(prompt_id)
+        if not result:
+            raise HTTPException(status_code=404, detail="Prompt not found")
+        return result
+
     existing = find_prompt(prompt_id)
     existing["likes"] = existing.get("likes", 0) + 1
-
     return {
         "id": prompt_id,
         "likes": existing["likes"],

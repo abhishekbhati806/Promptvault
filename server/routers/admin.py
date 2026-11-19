@@ -1,26 +1,28 @@
-﻿"""Admin endpoints for prompt moderation."""
+"""Admin endpoints for prompt moderation."""
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Response, status
 
 from dependencies import get_admin_user
-from models.user import USERS_BY_EMAIL
-from routers.prompts import find_prompt
+from models.user import count_users
+from routers.prompts import find_prompt, get_all_prompts
 from seed import PROMPTS
+from services.supabase_db import db_delete_prompt, db_update_prompt, supabase_enabled
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 @router.get("/stats")
 def admin_stats(_user: dict = Depends(get_admin_user)):
+    prompts = get_all_prompts()
     categories = {}
-    for prompt in PROMPTS:
+    for prompt in prompts:
         category = prompt.get("category", "general")
         categories[category] = categories.get(category, 0) + 1
 
     return {
-        "total_prompts": len(PROMPTS),
-        "total_users": len(USERS_BY_EMAIL),
-        "featured": sum(bool(p.get("featured")) for p in PROMPTS),
+        "total_prompts": len(prompts),
+        "total_users": count_users(),
+        "featured": sum(bool(p.get("featured")) for p in prompts),
         "by_category": [
             {"category": name, "count": count}
             for name, count in categories.items()
@@ -31,7 +33,7 @@ def admin_stats(_user: dict = Depends(get_admin_user)):
 @router.get("/prompts")
 def admin_list_prompts(_user: dict = Depends(get_admin_user)):
     return sorted(
-        PROMPTS,
+        get_all_prompts(),
         key=lambda p: str(p.get("created_at", "")),
         reverse=True,
     )
@@ -43,8 +45,12 @@ def toggle_feature(
     _user: dict = Depends(get_admin_user),
 ):
     prompt = find_prompt(prompt_id)
-    prompt["featured"] = not prompt.get("featured", False)
-    return {"featured": prompt["featured"]}
+    new_featured = not bool(prompt.get("featured", False))
+    if supabase_enabled():
+        db_update_prompt(prompt_id, {"featured": new_featured})
+    else:
+        prompt["featured"] = new_featured
+    return {"featured": new_featured}
 
 
 @router.delete("/prompts/{prompt_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -53,5 +59,8 @@ def admin_delete_prompt(
     _user: dict = Depends(get_admin_user),
 ):
     prompt = find_prompt(prompt_id)
-    PROMPTS.remove(prompt)
+    if supabase_enabled():
+        db_delete_prompt(prompt_id)
+    else:
+        PROMPTS.remove(prompt)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

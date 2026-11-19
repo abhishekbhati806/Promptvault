@@ -5,7 +5,11 @@ code runs locally, in Docker and on a host.
 """
 import os
 
-# --- MongoDB -----------------------------------------------------------
+# --- Supabase (Postgres via PostgREST) ---------------------------------
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+
+# --- MongoDB (legacy optional) -----------------------------------------
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
 MONGO_DB = os.getenv("MONGO_DB", "promptvault")
 

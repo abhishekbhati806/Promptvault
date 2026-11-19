@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PromptForm from '../components/PromptForm.jsx';
 import { api } from '../api/client.js';
+import { getErrorMessage } from '../utils/helpers.js';
 
 export default function CreatePrompt() {
   const navigate = useNavigate();
@@ -18,8 +18,7 @@ export default function CreatePrompt() {
       navigate('/prompts/mine');
     } catch (err) {
       setError(
-        err.response?.data?.detail ||
-        'Could not create prompt. Check that the backend is running and you are logged in.'
+        getErrorMessage(err, 'Could not create prompt. Please check your inputs and try again.')
       );
     } finally {
       setLoading(false);
@@ -28,22 +27,25 @@ export default function CreatePrompt() {
 
   return (
     <main className="container form-page">
-      <h1>Create a Prompt</h1>
+      <Link to="/prompts/mine" className="back-link">
+        ← Back to My Prompts
+      </Link>
+      <h1>✍️ Create a Prompt</h1>
       <p className="muted">
-        Publish a prompt and manage it later from My Prompts.
+        Publish a prompt to the community vault and manage it anytime from My Prompts.
       </p>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && (
+        <div className="alert alert-error" role="alert">
+          {error}
+        </div>
+      )}
 
       <PromptForm
         onSubmit={submit}
         loading={loading}
         submitLabel="Publish Prompt"
       />
-
-      <p>
-        <Link to="/prompts/mine">Back to My Prompts</Link>
-      </p>
     </main>
   );
 }

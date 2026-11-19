@@ -1,11 +1,12 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AuthContext from './auth-context.js';
-import { fetchCurrentUser } from '../utils/auth.js';
+import { fetchCurrentUser, getStoredToken, setStoredToken } from '../utils/auth.js';
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('promptvault_token'));
+  const [token, setToken] = useState(() => getStoredToken());
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(getStoredToken()));
+  const skipVerifyTokenRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -16,12 +17,20 @@ export function AuthProvider({ children }) {
       };
     }
 
+    // Skip redundant /me call right after interactive login (we already have fresh user).
+    if (skipVerifyTokenRef.current === token) {
+      skipVerifyTokenRef.current = null;
+      return () => {
+        active = false;
+      };
+    }
+
     fetchCurrentUser(token)
       .then((currentUser) => {
         if (active) setUser(currentUser);
       })
       .catch(() => {
-        localStorage.removeItem('promptvault_token');
+        setStoredToken(null);
         if (active) {
           setToken(null);
           setUser(null);
@@ -37,14 +46,16 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   function login(accessToken, currentUser) {
-    localStorage.setItem('promptvault_token', accessToken);
+    skipVerifyTokenRef.current = accessToken;
+    setStoredToken(accessToken);
     setToken(accessToken);
     setUser(currentUser);
     setLoading(false);
   }
 
   function logout() {
-    localStorage.removeItem('promptvault_token');
+    skipVerifyTokenRef.current = null;
+    setStoredToken(null);
     setToken(null);
     setUser(null);
     setLoading(false);

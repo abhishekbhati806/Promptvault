@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.js';
 
 const links = [
-  { to: '/', label: 'Home' },
-  { to: '/#prompts', label: 'Explore' },
-  { to: '/#categories', label: 'Categories' },
-  { to: '/#about', label: 'About' },
+  { to: '/', hash: '', label: 'Home' },
+  { to: '/#prompts', hash: 'prompts', label: 'Explore' },
+  { to: '/#categories', hash: 'categories', label: 'Categories' },
+  { to: '/#about', hash: 'about', label: 'About' },
 ];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -20,12 +21,25 @@ export default function Navbar() {
     navigate('/');
   };
 
+  const handleNavClick = (event, link) => {
+    setOpen(false);
+    if (link.hash && location.pathname === '/') {
+      event.preventDefault();
+      navigate(`/#${link.hash}`, { replace: true });
+      document.getElementById(link.hash)?.scrollIntoView({ behavior: 'smooth' });
+    } else if (!link.hash && location.pathname === '/') {
+      event.preventDefault();
+      navigate('/', { replace: true });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="navbar">
       <div className="container navbar-inner">
         <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-icon">🗄️</span>
-          PromptVault
+          <span className="brand-icon" aria-hidden="true">🗄️</span>
+          <span>PromptVault</span>
         </Link>
 
         <button
@@ -40,19 +54,37 @@ export default function Navbar() {
           <span />
         </button>
 
-        <nav className={`nav-links ${open ? 'open' : ''}`}>
-          {links.map((l) => (
-            <Link key={l.label} to={l.to} className="nav-link" onClick={() => setOpen(false)}>
-              {l.label}
-            </Link>
-          ))}
+        <nav className={`nav-links ${open ? 'open' : ''}`} aria-label="Primary">
+          {links.map((l) => {
+            const isActive =
+              location.pathname === '/' &&
+              (l.hash ? location.hash === `#${l.hash}` : !location.hash);
+            return (
+              <Link
+                key={l.label}
+                to={l.to}
+                className={`nav-link ${isActive ? 'active' : ''}`}
+                onClick={(e) => handleNavClick(e, l)}
+              >
+                {l.label}
+              </Link>
+            );
+          })}
 
           {user && (
             <>
-              <Link to="/dashboard" className="nav-link" onClick={() => setOpen(false)}>
+              <Link
+                to="/dashboard"
+                className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
+                onClick={() => setOpen(false)}
+              >
                 Dashboard
               </Link>
-              <Link to="/prompts/mine" className="nav-link" onClick={() => setOpen(false)}>
+              <Link
+                to="/prompts/mine"
+                className={`nav-link ${location.pathname === '/prompts/mine' ? 'active' : ''}`}
+                onClick={() => setOpen(false)}
+              >
                 My Prompts
               </Link>
             </>
@@ -70,9 +102,13 @@ export default function Navbar() {
           ) : (
             <div className="nav-auth">
               <Link to="/login" className="btn btn-small" onClick={() => setOpen(false)}>
-                Login
+                Log in
               </Link>
-              <Link to="/register" className="btn btn-small btn-primary" onClick={() => setOpen(false)}>
+              <Link
+                to="/register"
+                className="btn btn-small btn-primary"
+                onClick={() => setOpen(false)}
+              >
                 Sign up
               </Link>
             </div>

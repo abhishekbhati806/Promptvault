@@ -1,17 +1,16 @@
-
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../api/client.js';
 import { useAuth } from '../context/useAuth.js';
-
-const API_BASE = 'http://localhost:8000';
+import { getErrorMessage } from '../utils/helpers.js';
 
 function StatCard({ icon, label, value, description }) {
   return (
-    <article className="dashboard-card">
-      <span className="dashboard-icon">{icon}</span>
+    <article className="dashboard-card stat-card">
+      <span className="dashboard-icon" aria-hidden="true">{icon}</span>
       <p className="muted">{label}</p>
-      <h2>{value ?? 0}</h2>
-      <p className="muted">{description}</p>
+      <h2 className="stat-value">{value ?? 0}</h2>
+      <p className="muted stat-desc">{description}</p>
     </article>
   );
 }
@@ -20,56 +19,63 @@ export default function Dashboard() {
   const { user, token, logout } = useAuth();
 
   const [stats, setStats] = useState(null);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!token) {
-      return;
+  const loadDashboard = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      setError('');
+      const [dashData, favData] = await Promise.all([
+        api.getDashboard(),
+        api.getFavorites().catch(() => []),
+      ]);
+      setStats(dashData);
+      setFavorites(Array.isArray(favData) ? favData : []);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to load dashboard statistics.'));
+    } finally {
+      setLoading(false);
     }
-
-    const controller = new AbortController();
-
-    async function loadDashboard() {
-      try {
-        setLoading(true);
-        setError('');
-
-        const response = await fetch(
-          `${API_BASE}/api/stats/dashboard`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            signal: controller.signal,
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            response.status === 401
-              ? 'Your session has expired. Please log in again.'
-              : `Could not load dashboard (HTTP ${response.status}).`
-          );
-        }
-
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          setError(err.message || 'Unable to load dashboard statistics.');
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadDashboard();
-
-    return () => controller.abort();
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    let active = true;
+    Promise.all([api.getDashboard(), api.getFavorites().catch(() => [])])
+      .then(([dashData, favData]) => {
+        if (active) {
+          setStats(dashData);
+          setFavorites(Array.isArray(favData) ? favData : []);
+          setError('');
+        }
+      })
+      .catch((err) => {
+        if (active) setError(getErrorMessage(err, 'Unable to load dashboard statistics.'));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const handleUnfavorite = async (id) => {
+    try {
+      await api.removeFavorite(id);
+      setFavorites((list) => list.filter((p) => p.id !== id));
+      setStats((prev) =>
+        prev
+          ? { ...prev, my_favorites: Math.max(0, (prev.my_favorites || 1) - 1) }
+          : prev
+      );
+    } catch {
+      /* ignore */
+    }
+  };
 
   const categories = stats?.top_categories ?? [];
   const recentPrompts = stats?.recent_prompts ?? [];
@@ -81,16 +87,21 @@ export default function Dashboard() {
           <p className="hero-badge">YOUR WORKSPACE</p>
           <h1>Welcome, {user?.name || 'User'}</h1>
           <p className="muted">
-            Your prompts, activity, and workspace overview.
+            Your prompts, saved favorites, and community library overview.
           </p>
         </div>
 
-        <button className="btn btn-ghost" onClick={logout}>
-          Log out
-        </button>
+        <div className="dashboard-header-actions">
+          <Link to="/prompts/new" className="btn btn-primary">
+            + Create prompt
+          </Link>
+          <button type="button" className="btn btn-ghost" onClick={logout}>
+            Log out
+          </button>
+        </div>
       </section>
 
-      <section className="dashboard-grid">
+      <section className="dashboard-grid dashboard-stats-row">
         <StatCard
           icon="📚"
           label="Library prompts"
@@ -117,14 +128,11 @@ export default function Dashboard() {
         />
       </section>
 
-      {(error || !token) && (
+      {error && (
         <section className="dashboard-card" role="alert">
           <h2>Dashboard unavailable</h2>
-          <p>{error || 'Your login session is unavailable. Please log in again.'}</p>
-          <button
-            className="btn btn-primary"
-            onClick={() => window.location.reload()}
-          >
+          <p className="muted">{error}</p>
+          <button type="button" className="btn btn-primary" onClick={loadDashboard}>
             Try again
           </button>
         </section>
@@ -132,35 +140,88 @@ export default function Dashboard() {
 
       <section className="dashboard-grid">
         <article className="dashboard-card">
-          <span className="dashboard-icon">👤</span>
+          <span className="dashboard-icon" aria-hidden="true">👤</span>
           <h2>Account details</h2>
           <p className="muted">Name: {user?.name || 'Not available'}</p>
           <p className="muted">Email: {user?.email || 'Not available'}</p>
+          <div className="card-btn-row">
+            <Link to="/prompts/mine" className="btn btn-small">
+              Manage my prompts
+            </Link>
+          </div>
         </article>
 
         <article className="dashboard-card">
-          <span className="dashboard-icon">🚀</span>
-          <h2>Explore PromptVault</h2>
+          <span className="dashboard-icon" aria-hidden="true">🚀</span>
+          <h2>Explore &amp; build</h2>
           <p className="muted">
-            Discover prompts and open their details.
+            Browse community prompts or craft new ones with AI Studio.
           </p>
-          <Link to="/#prompts" className="btn btn-primary">
-            Explore prompts
-          </Link>
+          <div className="card-btn-row">
+            <Link to="/#prompts" className="btn btn-small btn-primary">
+              Explore prompts
+            </Link>
+            <Link to="/ai/generate" className="btn btn-small">
+              AI Generator
+            </Link>
+          </div>
         </article>
       </section>
 
       <section className="dashboard-card">
-        <h2>Popular categories</h2>
-        <p className="muted">Categories with the most prompts.</p>
+        <h2>⭐ Saved favorites</h2>
+        <p className="muted">Prompts you bookmarked for quick access.</p>
 
         {loading ? (
-          <p>Loading categories…</p>
+          <p className="muted" style={{ marginTop: '0.75rem' }}>Loading favorites…</p>
+        ) : favorites.length > 0 ? (
+          <div className="recent-list">
+            {favorites.map((prompt) => (
+              <article key={prompt.id} className="recent-row">
+                <div>
+                  <h3>
+                    <Link to={`/prompts/${prompt.id}`} className="row-title">
+                      {prompt.title}
+                    </Link>
+                  </h3>
+                  <p className="muted">
+                    {prompt.category || 'general'} · ❤️ {prompt.likes ?? 0}
+                  </p>
+                </div>
+                <div className="row-actions">
+                  <Link to={`/prompts/${prompt.id}`} className="btn btn-small">
+                    View
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-small btn-ghost"
+                    onClick={() => handleUnfavorite(prompt.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="muted" style={{ marginTop: '0.75rem' }}>
+            No saved favorites yet. Open any prompt and click <strong>☆ Save</strong> to bookmark it here.
+          </p>
+        )}
+      </section>
+
+      <section className="dashboard-card">
+        <h2>Popular categories</h2>
+        <p className="muted">Click a category to browse matching prompts.</p>
+
+        {loading ? (
+          <p className="muted" style={{ marginTop: '0.75rem' }}>Loading categories…</p>
         ) : categories.length > 0 ? (
           <div className="dashboard-grid">
             {categories.map((item) => (
-              <article
-                className="dashboard-card"
+              <Link
+                to={`/?category=${encodeURIComponent(item.category)}#prompts`}
+                className="dashboard-card dash-cat-link"
                 key={item.category}
               >
                 <h3>
@@ -171,7 +232,7 @@ export default function Dashboard() {
                 <p className="muted">
                   {item.count} {item.count === 1 ? 'prompt' : 'prompts'}
                 </p>
-              </article>
+              </Link>
             ))}
           </div>
         ) : (
@@ -181,26 +242,26 @@ export default function Dashboard() {
 
       <section className="dashboard-card">
         <h2>Recent prompts</h2>
-        <p className="muted">Recently created prompts in the library.</p>
+        <p className="muted">Latest prompts added to the PromptVault library.</p>
 
         {loading ? (
-          <p>Loading recent prompts…</p>
+          <p className="muted" style={{ marginTop: '0.75rem' }}>Loading recent prompts…</p>
         ) : recentPrompts.length > 0 ? (
-          <div>
+          <div className="recent-list">
             {recentPrompts.map((prompt) => (
-              <article
-                key={prompt.id}
-                className="dashboard-card"
-              >
-                <h3>{prompt.title || 'Untitled prompt'}</h3>
-                <p className="muted">
-                  {prompt.category || 'General'} · ❤️ {prompt.likes ?? 0}
-                </p>
+              <article key={prompt.id} className="recent-row">
+                <div>
+                  <h3>
+                    <Link to={`/prompts/${prompt.id}`} className="row-title">
+                      {prompt.title || 'Untitled prompt'}
+                    </Link>
+                  </h3>
+                  <p className="muted">
+                    {prompt.category || 'General'} · ❤️ {prompt.likes ?? 0}
+                  </p>
+                </div>
                 {prompt.id && (
-                  <Link
-                    to={`/prompts/${prompt.id}`}
-                    className="btn btn-ghost"
-                  >
+                  <Link to={`/prompts/${prompt.id}`} className="btn btn-small">
                     View prompt
                   </Link>
                 )}

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm --prefix client ci && npm --prefix client run build",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{server/**,client/dist/**}"
+    }
+  }
+}
